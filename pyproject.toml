@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,8 @@ name = "scriptfix"
 version = "0.1.0"
 description = "Tesseract OCR post-processing engine for handwritten South Asian and Persian scripts"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 authors = [
     { name = "scriptfix contributors" }
@@ -16,7 +17,6 @@ keywords = ["ocr", "gurmukhi", "punjabi", "urdu", "hindi", "farsi", "tesseract",
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -28,6 +28,10 @@ dependencies = [
     "PyYAML>=6.0",
     "click>=8.1",
 ]
+
+[project.urls]
+Repository = "https://github.com/jsdosanj/gurmukhifix"
+Issues = "https://github.com/jsdosanj/gurmukhifix/issues"
 
 [project.optional-dependencies]
 nlp = [
