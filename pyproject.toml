@@ -52,4 +52,4 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 
 [tool.setuptools.package-data]
-scriptfix = ["py.typed"]
+scriptfix = ["py.typed", "configs/*.yaml"]
