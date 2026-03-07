@@ -1,0 +1,152 @@
+# Gurmukhi OCR Correction Rules
+# SPDX-License-Identifier: MIT
+# Script: Gurmukhi (ਗੁਰਮੁਖੀ) — Punjabi writing system
+
+script: gurmukhi
+unicode_block: [0x0A00, 0x0A7F]
+normalization: NFC
+
+# Common Tesseract confusion pairs: wrong -> correct
+confusion_pairs:
+  # Sihari (ਿ) placement errors — sihari appears visually before the consonant
+  # but Unicode-encodes it after. Tesseract often reorders these.
+  - wrong: "ਸ਼"
+    correct: "ਸ"
+    note: "sha-nukta often misread as plain sa — nukta drop"
+  - wrong: "ਨ"
+    correct: "ਣ"
+    note: "na vs retroflex na — shape confusion"
+  - wrong: "ਰ"
+    correct: "ਲ"
+    note: "ra vs la — stroke similarity"
+  - wrong: "ਲ"
+    correct: "ਰ"
+    note: "la vs ra — stroke similarity"
+  - wrong: "ਵ"
+    correct: "ਬ"
+    note: "va vs ba — stroke confusion"
+  - wrong: "ਧ"
+    correct: "ਦ"
+    note: "dha vs da — aspirated pair"
+  - wrong: "ਦ"
+    correct: "ਧ"
+    note: "da vs dha — aspirated pair"
+  - wrong: "ਕ"
+    correct: "ਖ"
+    note: "ka vs kha — aspirated pair"
+  - wrong: "ਖ"
+    correct: "ਕ"
+    note: "kha vs ka — aspirated pair"
+  - wrong: "ਗ"
+    correct: "ਘ"
+    note: "ga vs gha — aspirated pair"
+  - wrong: "ਘ"
+    correct: "ਗ"
+    note: "gha vs ga — aspirated pair"
+  - wrong: "ਜ"
+    correct: "ਝ"
+    note: "ja vs jha — aspirated pair"
+  - wrong: "ਝ"
+    correct: "ਜ"
+    note: "jha vs ja — aspirated pair"
+  - wrong: "ਟ"
+    correct: "ਠ"
+    note: "tta vs ttha — retroflex aspirated pair"
+  - wrong: "ਠ"
+    correct: "ਟ"
+    note: "ttha vs tta — retroflex aspirated pair"
+  - wrong: "ਡ"
+    correct: "ਢ"
+    note: "dda vs ddha — retroflex aspirated pair"
+  - wrong: "ਢ"
+    correct: "ਡ"
+    note: "ddha vs dda — retroflex aspirated pair"
+  - wrong: "ਪ"
+    correct: "ਫ"
+    note: "pa vs pha — aspirated pair"
+  - wrong: "ਫ"
+    correct: "ਪ"
+    note: "pha vs pa — aspirated pair"
+  - wrong: "ਤ"
+    correct: "ਥ"
+    note: "ta vs tha — aspirated pair"
+  - wrong: "ਥ"
+    correct: "ਤ"
+    note: "tha vs ta — aspirated pair"
+  - wrong: "ਚ"
+    correct: "ਛ"
+    note: "ca vs cha — aspirated pair"
+  - wrong: "ਛ"
+    correct: "ਚ"
+    note: "cha vs ca — aspirated pair"
+  - wrong: "ਮ"
+    correct: "ਨ"
+    note: "ma vs na — shape similarity"
+  - wrong: "ਨ"
+    correct: "ਮ"
+    note: "na vs ma — shape similarity"
+  - wrong: "ੳ"
+    correct: "ਅ"
+    note: "oora vs airaa — base vowel confusion"
+  - wrong: "ਅ"
+    correct: "ੳ"
+    note: "airaa vs oora — base vowel confusion"
+  - wrong: "ੲ"
+    correct: "ਇ"
+    note: "iri vs i — vowel confusion"
+  - wrong: "ਏ"
+    correct: "ਐ"
+    note: "e vs ai — vowel confusion"
+  - wrong: "ਐ"
+    correct: "ਏ"
+    note: "ai vs e — vowel confusion"
+  - wrong: "ਓ"
+    correct: "ਔ"
+    note: "o vs au — vowel confusion"
+  - wrong: "ਔ"
+    correct: "ਓ"
+    note: "au vs o — vowel confusion"
+  - wrong: "ਹ"
+    correct: "ਖ"
+    note: "ha vs kha — breath confusion in handwritten"
+
+# Diacritic confusion
+diacritic_pairs:
+  - wrong: "ਂ"   # tippi
+    correct: "ੰ"  # bindi
+    note: "tippi vs bindi confusion — nasalization markers"
+  - wrong: "ੰ"   # bindi
+    correct: "ਂ"  # tippi
+    note: "bindi vs tippi confusion"
+  - wrong: "੍"   # virama/halant
+    correct: ""
+    note: "spurious virama"
+  - wrong: "ੱ"   # addak
+    correct: ""
+    note: "spurious addak"
+
+# Sihari (ਿ U+0A3F) placement — must come before consonant visually but after in Unicode
+sihari_validation: true
+sihari_codepoint: 0x0A3F
+
+# Impossible sequences (regex patterns using 'regex' library)
+impossible_sequences:
+  - pattern: "[\u0A3E\u0A3F\u0A40\u0A41\u0A42\u0A47\u0A48\u0A4B\u0A4C]{2,}"
+    description: "consecutive dependent vowels"
+    severity: REJECT
+  - pattern: "^[\u0A3E\u0A3F\u0A40\u0A41\u0A42\u0A47\u0A48\u0A4B\u0A4C]"
+    description: "dependent vowel at word start"
+    severity: REJECT
+  - pattern: "\u0A71{2,}"
+    description: "multiple addak"
+    severity: WARN
+
+# Valid Unicode ranges for this script
+valid_ranges:
+  - [0x0A00, 0x0A7F]
+  - [0x0020, 0x007E]  # ASCII punctuation/numerals
+
+confidence_thresholds:
+  pass_through: 85
+  full_correction: [60, 85]
+  flag_only: 60

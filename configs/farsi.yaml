@@ -1,0 +1,159 @@
+# Farsi (Persian) OCR Correction Rules
+# SPDX-License-Identifier: MIT
+# Script: Persian (فارسی) — Arabic script with Persian extensions
+# Direction: right-to-left
+
+script: farsi
+unicode_block: [0x0600, 0x06FF]
+normalization: NFC
+direction: rtl
+
+confusion_pairs:
+  # Yeh variants — major source of confusion in Farsi OCR
+  - wrong: "ي"    # Arabic ye (dots below in isolation)
+    correct: "ی"  # Farsi ye (no dots below)
+    note: "Arabic ye vs Farsi ye — encoding confusion"
+  - wrong: "ی"
+    correct: "ي"
+    note: "Farsi ye vs Arabic ye"
+  - wrong: "ى"    # alef maqsura
+    correct: "ی"
+    note: "alef maqsura vs Farsi ye"
+  # Kaf vs Gaf
+  - wrong: "ک"
+    correct: "گ"
+    note: "kaf vs gaf — Persian gaf often missed"
+  - wrong: "گ"
+    correct: "ک"
+    note: "gaf vs kaf"
+  - wrong: "ك"    # Arabic kaf
+    correct: "ک"  # Farsi kaf
+    note: "Arabic kaf vs Farsi kaf — Unicode variant"
+  # He variants
+  - wrong: "ه"
+    correct: "ح"
+    note: "he vs ha — shape similarity"
+  - wrong: "ح"
+    correct: "ه"
+    note: "ha vs he"
+  # Connected letter breaks — Farsi Nastaliq joins letters
+  - wrong: "ا ل"
+    correct: "ال"
+    note: "broken alef-lam connection"
+  - wrong: "ب ه"
+    correct: "به"
+    note: "broken ba-he (common word)"
+  - wrong: "ک ه"
+    correct: "که"
+    note: "broken kaf-he (common conjunction)"
+  # Nukta/dot errors
+  - wrong: "ف"
+    correct: "ق"
+    note: "fa vs qaf"
+  - wrong: "ق"
+    correct: "ف"
+    note: "qaf vs fa"
+  - wrong: "ز"
+    correct: "ر"
+    note: "zain vs ra — dot drop"
+  - wrong: "ر"
+    correct: "ز"
+    note: "ra vs zain"
+  - wrong: "ذ"
+    correct: "د"
+    note: "zal vs dal"
+  - wrong: "د"
+    correct: "ذ"
+    note: "dal vs zal"
+  - wrong: "ش"
+    correct: "س"
+    note: "shin vs sin — dot drop"
+  - wrong: "س"
+    correct: "ش"
+    note: "sin vs shin"
+  - wrong: "ض"
+    correct: "ص"
+    note: "dhad vs sad"
+  - wrong: "ص"
+    correct: "ض"
+    note: "sad vs dhad"
+  - wrong: "ظ"
+    correct: "ط"
+    note: "zha vs tua"
+  - wrong: "ط"
+    correct: "ظ"
+    note: "tua vs zha"
+  - wrong: "غ"
+    correct: "ع"
+    note: "ghain vs ain"
+  - wrong: "ع"
+    correct: "غ"
+    note: "ain vs ghain"
+  - wrong: "خ"
+    correct: "ح"
+    note: "kha vs ha"
+  - wrong: "ح"
+    correct: "خ"
+    note: "ha vs kha"
+  # Hamza
+  - wrong: "ء"
+    correct: "ئ"
+    note: "standalone hamza vs hamza-on-ye"
+  - wrong: "أ"
+    correct: "ا"
+    note: "hamza-above-alef vs plain alef"
+  # Pe/Ba confusion (Farsi-specific letter)
+  - wrong: "ب"
+    correct: "پ"
+    note: "ba vs pa"
+  - wrong: "پ"
+    correct: "ب"
+    note: "pa vs ba"
+  # Che (Farsi-specific)
+  - wrong: "ج"
+    correct: "چ"
+    note: "jim vs che (Farsi)"
+  - wrong: "چ"
+    correct: "ج"
+    note: "che vs jim"
+
+diacritic_pairs:
+  # Shadda and sukun recovery
+  - wrong: "\u0651"
+    correct: ""
+    note: "dropped shadda"
+  - wrong: "\u0652"
+    correct: ""
+    note: "dropped sukun"
+  - wrong: "\u064E"
+    correct: ""
+    note: "dropped fatha"
+  - wrong: "\u0650"
+    correct: ""
+    note: "dropped kasra"
+  - wrong: "\u064F"
+    correct: ""
+    note: "dropped damma"
+
+impossible_sequences:
+  - pattern: "[\u064B-\u065F]{2,}"
+    description: "consecutive diacritics"
+    severity: WARN
+  - pattern: "^[\u064B-\u065F]"
+    description: "diacritic at word start"
+    severity: WARN
+  - pattern: "\u06CC[\u064B-\u065F]*\u06CC"
+    description: "consecutive Farsi ye"
+    severity: WARN
+
+valid_ranges:
+  - [0x0600, 0x06FF]
+  - [0x0750, 0x077F]
+  - [0xFB50, 0xFDFF]
+  - [0xFE70, 0xFEFF]
+  - [0x0020, 0x007E]
+
+confidence_thresholds:
+  pass_through: 85
+  full_correction: [60, 85]
+  flag_only: 60

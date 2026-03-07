@@ -1,0 +1,149 @@
+# Hindi OCR Correction Rules
+# SPDX-License-Identifier: MIT
+# Script: Devanagari (देवनागरी) — Hindi writing system
+
+script: hindi
+unicode_block: [0x0900, 0x097F]
+normalization: NFC
+
+confusion_pairs:
+  # Aspirated consonant pairs
+  - wrong: "क"
+    correct: "ख"
+    note: "ka vs kha — aspirated confusion"
+  - wrong: "ख"
+    correct: "क"
+    note: "kha vs ka — aspirated confusion"
+  - wrong: "ग"
+    correct: "घ"
+    note: "ga vs gha — aspirated confusion"
+  - wrong: "घ"
+    correct: "ग"
+    note: "gha vs ga — aspirated confusion"
+  - wrong: "च"
+    correct: "छ"
+    note: "ca vs cha — aspirated confusion"
+  - wrong: "छ"
+    correct: "च"
+    note: "cha vs ca — aspirated confusion"
+  - wrong: "ज"
+    correct: "झ"
+    note: "ja vs jha — aspirated confusion"
+  - wrong: "झ"
+    correct: "ज"
+    note: "jha vs ja — aspirated confusion"
+  - wrong: "ट"
+    correct: "ठ"
+    note: "tta vs ttha — retroflex aspirated"
+  - wrong: "ठ"
+    correct: "ट"
+    note: "ttha vs tta — retroflex aspirated"
+  - wrong: "ड"
+    correct: "ढ"
+    note: "dda vs ddha — retroflex aspirated"
+  - wrong: "ढ"
+    correct: "ड"
+    note: "ddha vs dda — retroflex aspirated"
+  - wrong: "त"
+    correct: "थ"
+    note: "ta vs tha — aspirated confusion"
+  - wrong: "थ"
+    correct: "त"
+    note: "tha vs ta — aspirated confusion"
+  - wrong: "द"
+    correct: "ध"
+    note: "da vs dha — aspirated confusion"
+  - wrong: "ध"
+    correct: "द"
+    note: "dha vs da — aspirated confusion"
+  - wrong: "प"
+    correct: "फ"
+    note: "pa vs pha — aspirated confusion"
+  - wrong: "फ"
+    correct: "प"
+    note: "pha vs pa — aspirated confusion"
+  - wrong: "ब"
+    correct: "भ"
+    note: "ba vs bha — aspirated confusion"
+  - wrong: "भ"
+    correct: "ब"
+    note: "bha vs ba — aspirated confusion"
+  # Shape similarity confusions
+  - wrong: "म"
+    correct: "न"
+    note: "ma vs na — shape similarity"
+  - wrong: "न"
+    correct: "म"
+    note: "na vs ma — shape similarity"
+  - wrong: "र"
+    correct: "ल"
+    note: "ra vs la — stroke similarity"
+  - wrong: "ल"
+    correct: "र"
+    note: "la vs ra — stroke similarity"
+  - wrong: "व"
+    correct: "ब"
+    note: "va vs ba — shape confusion"
+  - wrong: "ब"
+    correct: "व"
+    note: "ba vs va — shape confusion"
+  - wrong: "ण"
+    correct: "न"
+    note: "retroflex na vs dental na"
+  - wrong: "न"
+    correct: "ण"
+    note: "dental na vs retroflex na"
+  - wrong: "श"
+    correct: "ष"
+    note: "sha vs ssa — sibilant confusion"
+  - wrong: "ष"
+    correct: "श"
+    note: "ssa vs sha — sibilant confusion"
+  - wrong: "स"
+    correct: "श"
+    note: "sa vs sha — sibilant confusion"
+  # Matra (vowel sign) errors
+  - wrong: "ा"
+    correct: "ि"
+    note: "aa-matra vs i-matra — length confusion"
+  - wrong: "ि"
+    correct: "ी"
+    note: "i-matra vs ii-matra — length confusion"
+
+diacritic_pairs:
+  # Anusvara vs chandrabindu
+  - wrong: "ं"
+    correct: "ँ"
+    note: "anusvara vs chandrabindu — nasalization confusion"
+  - wrong: "ँ"
+    correct: "ं"
+    note: "chandrabindu vs anusvara"
+  - wrong: "ः"
+    correct: ""
+    note: "spurious visarga"
+  - wrong: "़"
+    correct: ""
+    note: "spurious nukta"
+
+impossible_sequences:
+  - pattern: "[\u093E\u093F\u0940\u0941\u0942\u0943\u0944\u0947\u0948\u094B\u094C]{2,}"
+    description: "consecutive matras"
+    severity: REJECT
+  - pattern: "^[\u093E\u093F\u0940\u0941\u0942\u0943\u0944\u0947\u0948\u094B\u094C]"
+    description: "matra at word start"
+    severity: REJECT
+  - pattern: "\u0902\u0902"
+    description: "double anusvara"
+    severity: WARN
+  - pattern: "\u0901\u0901"
+    description: "double chandrabindu"
+    severity: WARN
+
+valid_ranges:
+  - [0x0900, 0x097F]
+  - [0x0020, 0x007E]
+
+confidence_thresholds:
+  pass_through: 85
+  full_correction: [60, 85]
+  flag_only: 60

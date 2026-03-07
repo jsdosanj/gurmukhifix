@@ -1,0 +1,150 @@
+# Punjabi OCR Correction Rules (extends Gurmukhi)
+# SPDX-License-Identifier: MIT
+# Script: Punjabi written in Gurmukhi script
+# Note: Punjabi uses the same Gurmukhi Unicode block; this config adds
+#       Punjabi-specific phonological constraints on top of the base Gurmukhi rules.
+
+script: punjabi
+unicode_block: [0x0A00, 0x0A7F]
+normalization: NFC
+extends: gurmukhi
+
+confusion_pairs:
+  # Core Gurmukhi aspirated pairs (shared with punjabi script)
+  - wrong: "ਦ"
+    correct: "ਧ"
+    note: "da vs dha — aspirated pair"
+  - wrong: "ਧ"
+    correct: "ਦ"
+    note: "dha vs da — aspirated pair"
+  - wrong: "ਕ"
+    correct: "ਖ"
+    note: "ka vs kha — aspirated pair"
+  - wrong: "ਖ"
+    correct: "ਕ"
+    note: "kha vs ka — aspirated pair"
+  - wrong: "ਗ"
+    correct: "ਘ"
+    note: "ga vs gha — aspirated pair"
+  - wrong: "ਘ"
+    correct: "ਗ"
+    note: "gha vs ga — aspirated pair"
+  - wrong: "ਜ"
+    correct: "ਝ"
+    note: "ja vs jha — aspirated pair"
+  - wrong: "ਝ"
+    correct: "ਜ"
+    note: "jha vs ja — aspirated pair"
+  - wrong: "ਟ"
+    correct: "ਠ"
+    note: "tta vs ttha — retroflex aspirated pair"
+  - wrong: "ਠ"
+    correct: "ਟ"
+    note: "ttha vs tta — retroflex aspirated pair"
+  - wrong: "ਡ"
+    correct: "ਢ"
+    note: "dda vs ddha — retroflex aspirated pair"
+  - wrong: "ਢ"
+    correct: "ਡ"
+    note: "ddha vs dda — retroflex aspirated pair"
+  - wrong: "ਪ"
+    correct: "ਫ"
+    note: "pa vs pha — aspirated pair"
+  - wrong: "ਫ"
+    correct: "ਪ"
+    note: "pha vs pa — aspirated pair"
+  - wrong: "ਤ"
+    correct: "ਥ"
+    note: "ta vs tha — aspirated pair"
+  - wrong: "ਥ"
+    correct: "ਤ"
+    note: "tha vs ta — aspirated pair"
+  - wrong: "ਚ"
+    correct: "ਛ"
+    note: "ca vs cha — aspirated pair"
+  - wrong: "ਛ"
+    correct: "ਚ"
+    note: "cha vs ca — aspirated pair"
+  - wrong: "ਨ"
+    correct: "ਣ"
+    note: "na vs retroflex na"
+  - wrong: "ਰ"
+    correct: "ਲ"
+    note: "ra vs la"
+  - wrong: "ਲ"
+    correct: "ਰ"
+    note: "la vs ra"
+  - wrong: "ਮ"
+    correct: "ਨ"
+    note: "ma vs na"
+  - wrong: "ੳ"
+    correct: "ਅ"
+    note: "oora vs airaa"
+  - wrong: "ੲ"
+    correct: "ਇ"
+    note: "iri vs i"
+  - wrong: "ਏ"
+    correct: "ਐ"
+    note: "e vs ai"
+  - wrong: "ਐ"
+    correct: "ਏ"
+    note: "ai vs e"
+  - wrong: "ਓ"
+    correct: "ਔ"
+    note: "o vs au"
+  - wrong: "ਔ"
+    correct: "ਓ"
+    note: "au vs o"
+  # Punjabi-specific additions
+  - wrong: "ਂ"
+    correct: "ੰ"
+    note: "tippi vs bindi — Punjabi nasalization"
+  - wrong: "ੰ"
+    correct: "ਂ"
+    note: "bindi vs tippi — Punjabi nasalization"
+  - wrong: "ਸ"
+    correct: "ਸ਼"
+    note: "sa vs sha — nukta drop"
+  - wrong: "ਖ਼"
+    correct: "ਖ"
+    note: "kha vs khha — nukta confusion"
+  - wrong: "ਗ਼"
+    correct: "ਗ"
+    note: "ga vs ghha — nukta confusion"
+  - wrong: "ਫ਼"
+    correct: "ਫ"
+    note: "pha vs fa — nukta confusion"
+  - wrong: "ਜ਼"
+    correct: "ਜ"
+    note: "za vs ja — nukta drop"
+
+diacritic_pairs:
+  - wrong: "਼"
+    correct: ""
+    note: "spurious nukta"
+  - wrong: "ੵ"
+    correct: ""
+    note: "spurious yakash"
+
+impossible_sequences:
+  - pattern: "[\u0A3E\u0A3F\u0A40\u0A41\u0A42\u0A47\u0A48\u0A4B\u0A4C]{2,}"
+    description: "consecutive dependent vowels"
+    severity: REJECT
+  - pattern: "^[\u0A3E\u0A3F\u0A40\u0A41\u0A42\u0A47\u0A48\u0A4B\u0A4C]"
+    description: "dependent vowel at word start"
+    severity: REJECT
+  - pattern: "\u0A71\u0A71"
+    description: "double addak"
+    severity: WARN
+  - pattern: "\u0A70\u0A70"
+    description: "double tippi"
+    severity: WARN
+
+valid_ranges:
+  - [0x0A00, 0x0A7F]
+  - [0x0020, 0x007E]
+
+confidence_thresholds:
+  pass_through: 85
+  full_correction: [60, 85]
+  flag_only: 60

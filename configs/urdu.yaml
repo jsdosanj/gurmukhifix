@@ -1,0 +1,160 @@
+# Urdu OCR Correction Rules
+# SPDX-License-Identifier: MIT
+# Script: Nastaliq (نستعلیق) — Urdu writing system (Arabic script variant)
+# Direction: right-to-left
+
+script: urdu
+unicode_block: [0x0600, 0x06FF]
+normalization: NFC
+direction: rtl
+
+confusion_pairs:
+  # Nukta placement errors — dots that distinguish letters
+  - wrong: "ب"    # ba
+    correct: "پ"  # pa (three dots below)
+    note: "ba vs pa — nukta count confusion (1 vs 3 dots)"
+  - wrong: "پ"
+    correct: "ب"
+    note: "pa vs ba — nukta count confusion"
+  - wrong: "ب"
+    correct: "ت"  # ta (two dots above)
+    note: "ba vs ta — position confusion"
+  - wrong: "ت"
+    correct: "ب"
+    note: "ta vs ba"
+  - wrong: "ت"
+    correct: "ث"  # tha (three dots above)
+    note: "ta vs tha — dot count confusion"
+  - wrong: "ث"
+    correct: "ت"
+    note: "tha vs ta"
+  - wrong: "ج"
+    correct: "ح"  # ha (no dots)
+    note: "jim vs ha — dot drop"
+  - wrong: "ح"
+    correct: "ج"
+    note: "ha vs jim — dot addition"
+  - wrong: "ح"
+    correct: "خ"  # kha (one dot above)
+    note: "ha vs kha"
+  - wrong: "خ"
+    correct: "ح"
+    note: "kha vs ha"
+  - wrong: "د"
+    correct: "ذ"  # zal (one dot above)
+    note: "dal vs zal — nukta confusion"
+  - wrong: "ذ"
+    correct: "د"
+    note: "zal vs dal"
+  - wrong: "ر"
+    correct: "ز"  # zain (one dot above)
+    note: "ra vs zain — nukta confusion"
+  - wrong: "ز"
+    correct: "ر"
+    note: "zain vs ra"
+  - wrong: "ر"
+    correct: "ڑ"  # rra
+    note: "ra vs rra"
+  - wrong: "ڑ"
+    correct: "ر"
+    note: "rra vs ra"
+  - wrong: "س"
+    correct: "ش"  # shin (three dots above)
+    note: "sin vs shin — dot confusion"
+  - wrong: "ش"
+    correct: "س"
+    note: "shin vs sin"
+  - wrong: "ص"
+    correct: "ض"  # dhad (one dot above)
+    note: "sad vs dhad"
+  - wrong: "ض"
+    correct: "ص"
+    note: "dhad vs sad"
+  - wrong: "ط"
+    correct: "ظ"  # zha
+    note: "tua vs zha"
+  - wrong: "ظ"
+    correct: "ط"
+    note: "zha vs tua"
+  - wrong: "ع"
+    correct: "غ"  # ghain
+    note: "ain vs ghain — dot confusion"
+  - wrong: "غ"
+    correct: "ع"
+    note: "ghain vs ain"
+  - wrong: "ف"
+    correct: "ق"  # qaf
+    note: "fa vs qaf — dot count confusion"
+  - wrong: "ق"
+    correct: "ف"
+    note: "qaf vs fa"
+  - wrong: "ک"
+    correct: "گ"  # gaf
+    note: "kaf vs gaf"
+  - wrong: "گ"
+    correct: "ک"
+    note: "gaf vs kaf"
+  - wrong: "ن"
+    correct: "ی"  # ye
+    note: "nun vs ye — shape similarity in Nastaliq"
+  # Hamza variants
+  - wrong: "ء"
+    correct: "ئ"
+    note: "standalone hamza vs hamza-above-ye"
+  - wrong: "ئ"
+    correct: "ء"
+    note: "hamza-above-ye vs standalone hamza"
+  - wrong: "أ"
+    correct: "ا"
+    note: "alef-above-hamza vs plain alef"
+  - wrong: "إ"
+    correct: "ا"
+    note: "alef-below-hamza vs plain alef"
+  # He confusion
+  - wrong: "ہ"
+    correct: "ه"
+    note: "Urdu he vs Arabic ha"
+  - wrong: "ه"
+    correct: "ہ"
+    note: "Arabic ha vs Urdu he"
+
+diacritic_pairs:
+  # Aerab (short vowel marks)
+  - wrong: "\u064E"   # fatha (zabar)
+    correct: ""
+    note: "dropped zabar"
+  - wrong: "\u0650"   # kasra (zer)
+    correct: ""
+    note: "dropped zer"
+  - wrong: "\u064F"   # damma (pesh)
+    correct: ""
+    note: "dropped pesh"
+  - wrong: "\u0651"   # shadda
+    correct: ""
+    note: "dropped shadda"
+  - wrong: "\u0652"   # sukun
+    correct: ""
+    note: "dropped sukun"
+
+impossible_sequences:
+  - pattern: "[\u064B-\u065F]{2,}"
+    description: "consecutive aerab/diacritics"
+    severity: WARN
+  - pattern: "^[\u064B-\u065F]"
+    description: "aerab at word start"
+    severity: WARN
+  - pattern: "\u0621[\u064B-\u065F]*\u0621"
+    description: "consecutive hamza"
+    severity: WARN
+
+valid_ranges:
+  - [0x0600, 0x06FF]
+  - [0x0750, 0x077F]
+  - [0xFB50, 0xFDFF]
+  - [0xFE70, 0xFEFF]
+  - [0x0020, 0x007E]
+
+confidence_thresholds:
+  pass_through: 85
+  full_correction: [60, 85]
+  flag_only: 60
