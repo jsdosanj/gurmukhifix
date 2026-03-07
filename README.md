@@ -97,8 +97,10 @@ pip install scriptfix
 ### Optional NLP extras
 
 ```bash
-pip install "scriptfix[nlp]"   # adds scikit-learn for contextual classifiers
+pip install "scriptfix[nlp]"
 ```
+
+This adds `scikit-learn` for contextual classifiers.
 
 ---
 
@@ -176,7 +178,7 @@ To build a correction profile specific to, say, 19th-century Punjabi manuscripts
 3. Review flagged regions using `scriptfix review`.
 4. After 10+ confirmations per pattern, promoted pairs appear in the report.
 5. Export the report and add promoted pairs to a custom YAML config by copying
-   `configs/punjabi.yaml` and appending the promoted pairs to `confusion_pairs`.
+   `scriptfix/configs/punjabi.yaml` and appending the promoted pairs to `confusion_pairs`.
 
 ---
 
@@ -184,12 +186,12 @@ To build a correction profile specific to, say, 19th-century Punjabi manuscripts
 
 ### Adding new language rules
 
-Most high-level correction rules live in `configs/{language}.yaml`. Some
+Most high-level correction rules live in `scriptfix/configs/{language}.yaml`. Some
 low-level script-specific handling (for example, ligature, diacritic, and
 validator behaviour) is implemented in Python modules. To add or update rules:
 
 1. Fork the repository.
-2. Edit the relevant `configs/{language}.yaml`.
+2. Edit the relevant `scriptfix/configs/{language}.yaml`.
 3. Add a test case in `tests/test_corrector.py` that exercises the new rule.
 4. Run `pytest tests/` — all tests must pass.
 5. Submit a pull request.
@@ -202,7 +204,7 @@ the bug. Place these in the appropriate `tests/test_*.py` file.
 ### Submitting corrections to the community database
 
 If you have manually verified correction pairs for a specific corpus, you can
-submit them as a pull request to `configs/{language}.yaml`. Each pair must
+submit them as a pull request to `scriptfix/configs/{language}.yaml`. Each pair must
 include a `note` field explaining the confusion and, where possible, a reference
 to the source corpus or academic work.
 
@@ -242,13 +244,13 @@ reconstruct document layout from the output.
 ## Repository structure
 
 ```
-configs/
-  gurmukhi.yaml       ← Gurmukhi confusion pairs and rules
-  punjabi.yaml        ← Punjabi-specific rules
-  urdu.yaml           ← Urdu nukta and hamza rules
-  hindi.yaml          ← Hindi matra and anusvara rules
-  farsi.yaml          ← Farsi yeh, kaf/gaf, and joining rules
 scriptfix/
+  configs/
+    gurmukhi.yaml     ← Gurmukhi confusion pairs and rules
+    punjabi.yaml      ← Punjabi-specific rules
+    urdu.yaml         ← Urdu nukta and hamza rules
+    hindi.yaml        ← Hindi matra and anusvara rules
+    farsi.yaml        ← Farsi yeh, kaf/gaf, and joining rules
   corrector.py        ← Character Correction Engine
   validator.py        ← Script Integrity Validator
   ligature.py         ← Ligature and Conjunct Handler

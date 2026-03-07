@@ -17,7 +17,7 @@ from typing import Any
 import regex
 import yaml
 
-_CONFIG_DIR = Path(__file__).parent.parent / "configs"
+_CONFIG_DIR = Path(__file__).parent / "configs"
 
 
 def _load_config(language: str) -> dict[str, Any]:
