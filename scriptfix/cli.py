@@ -18,7 +18,7 @@ from typing import Any
 
 import click
 
-from .integration import DocumentProcessor, TesseractOutput, process_document
+from .integration import process_document
 from .learner import CorrectionStore
 
 SUPPORTED_LANGUAGES = ["gurmukhi", "punjabi", "hindi", "urdu", "farsi"]
@@ -150,18 +150,40 @@ def batch(
 
 @cli.command()
 @click.option(
-    "--flagged", required=True, type=click.Path(exists=True),
-    help="Path to flagged.json (produced by 'correct' or 'batch')."
+    "--flagged", "flagged_path", required=True, type=click.Path(exists=True),
+    help="Path to flagged.json or metadata.json with flagged regions."
 )
 @click.option(
     "--corrections", "db_path", default="./corrections.db", show_default=True,
     type=click.Path(),
     help="Path to corrections database."
 )
-def review(flagged: str, db_path: str) -> None:
+def review(flagged_path: str, db_path: str) -> None:
     """Interactive review of flagged OCR regions."""
-    with Path(flagged).open(encoding="utf-8") as fh:
-        flagged_data: list[dict[str, Any]] = json.load(fh)
+    path = Path(flagged_path)
+    with path.open(encoding="utf-8") as fh:
+        raw: Any = json.load(fh)
+
+    # Support both a bare list of flagged regions (flagged.json)
+    # and a metadata.json-style object with an embedded flagged list.
+    if isinstance(raw, list):
+        flagged_data: list[dict[str, Any]] = raw
+    elif isinstance(raw, dict):
+        if isinstance(raw.get("flagged"), list):
+            flagged_data = raw["flagged"]
+        else:
+            click.echo(
+                "No flagged regions found in JSON file. "
+                "Expected a list or a dict with a 'flagged' key.",
+                err=True,
+            )
+            sys.exit(1)
+    else:
+        click.echo(
+            "Unsupported JSON structure; expected a list or object.",
+            err=True,
+        )
+        sys.exit(1)
 
     if not flagged_data:
         click.echo("No flagged regions to review.")

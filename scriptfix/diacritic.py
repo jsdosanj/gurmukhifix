@@ -1,8 +1,8 @@
 """Diacritic and Nukta Recovery for scriptfix.
 
 Runs after the initial correction pass to recover dropped or misplaced
-diacritics using context-based heuristics and bounding-box proximity data
-from Tesseract's alternatives array.
+diacritics using context-based heuristics and, when provided, text and
+confidence information from Tesseract's alternatives array.
 """
 
 from __future__ import annotations
@@ -14,16 +14,8 @@ from typing import Any
 import regex
 import yaml
 
+
 _CONFIG_DIR = Path(__file__).parent.parent / "configs"
-
-# Unicode diacritic codepoints per script
-_GURMUKHI_MATRAS = "\u0A3E\u0A3F\u0A40\u0A41\u0A42\u0A47\u0A48\u0A4B\u0A4C"
-_GURMUKHI_NASALS = "\u0A02\u0A70\u0A71"  # bindi, tippi, addak
-
-_DEVANAGARI_MATRAS = "\u093E\u093F\u0940\u0941\u0942\u0943\u0944\u0947\u0948\u094B\u094C"
-_DEVANAGARI_NASALS = "\u0901\u0902"  # chandrabindu, anusvara
-
-_ARABIC_AERAB = "\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652"  # harakat + shadda + sukun
 
 
 def _load_config(language: str) -> dict[str, Any]:

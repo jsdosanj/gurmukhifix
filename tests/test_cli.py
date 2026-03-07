@@ -122,6 +122,57 @@ class TestReportCommand:
         assert data["script"] == "hindi"
 
 
+class TestReviewCommand:
+    def test_review_with_flagged_list(self, runner: CliRunner, tmp_path: Path) -> None:
+        """review command accepts a bare list (flagged.json)."""
+        flagged_file = tmp_path / "flagged.json"
+        flagged_file.write_text(
+            json.dumps([
+                {"word_index": 0, "original": "ਸਤਿ", "original_confidence": 30.0,
+                 "alternatives": [], "script": "gurmukhi"}
+            ]),
+            encoding="utf-8",
+        )
+        # Simulate pressing Enter to skip
+        result = runner.invoke(cli, [
+            "review",
+            "--flagged", str(flagged_file),
+            "--corrections", str(tmp_path / "test.db"),
+        ], input="\n")
+        assert result.exit_code == 0
+
+    def test_review_with_metadata_json(self, runner: CliRunner, tmp_path: Path) -> None:
+        """review command accepts a metadata.json with embedded 'flagged' key."""
+        meta_file = tmp_path / "metadata.json"
+        meta_file.write_text(
+            json.dumps({
+                "language": "gurmukhi",
+                "flagged": [
+                    {"word_index": 0, "original": "ਸਤਿ", "original_confidence": 30.0,
+                     "alternatives": [], "script": "gurmukhi"}
+                ]
+            }),
+            encoding="utf-8",
+        )
+        result = runner.invoke(cli, [
+            "review",
+            "--flagged", str(meta_file),
+            "--corrections", str(tmp_path / "test.db"),
+        ], input="\n")
+        assert result.exit_code == 0
+
+    def test_review_empty_list(self, runner: CliRunner, tmp_path: Path) -> None:
+        flagged_file = tmp_path / "flagged.json"
+        flagged_file.write_text("[]", encoding="utf-8")
+        result = runner.invoke(cli, [
+            "review",
+            "--flagged", str(flagged_file),
+            "--corrections", str(tmp_path / "test.db"),
+        ])
+        assert result.exit_code == 0
+        assert "No flagged regions" in result.output
+
+
 class TestCLIGeneral:
     def test_version(self, runner: CliRunner) -> None:
         result = runner.invoke(cli, ["--version"])

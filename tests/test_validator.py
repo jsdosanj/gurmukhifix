@@ -60,6 +60,12 @@ class TestScriptValidatorGurmukhi:
         violations = self.validator.validate(bad)
         assert any(v["rule"] == "orphaned_matra" for v in violations)
 
+    def test_orphaned_sihari_flagged(self) -> None:
+        # sihari (U+0A3F) not preceded by a consonant
+        bad = " \u0A3F"  # space then sihari
+        violations = self.validator.validate(bad)
+        assert any(v["rule"] == "orphaned_matra" for v in violations)
+
     def test_invalid_codepoint_flagged(self) -> None:
         # Mix of Gurmukhi and Cyrillic
         mixed = "ਕ\u0410"  # Gurmukhi ka + Cyrillic A

@@ -119,6 +119,22 @@ class TestDocumentProcessor:
         assert (tmp_path / "corrected_text.txt").exists()
         assert (tmp_path / "correction_report.json").exists()
         assert (tmp_path / "metadata.json").exists()
+        assert (tmp_path / "flagged.json").exists()
+
+    def test_flagged_regions_have_script_field(self) -> None:
+        data = {"words": [{"text": "ਸਤਿ", "conf": 30.0, "bbox": [], "alternatives": []}]}
+        tess = TesseractOutput(data)
+        proc = DocumentProcessor("gurmukhi")
+        result = proc.process(tess)
+        assert len(result["flagged"]) == 1
+        assert result["flagged"][0]["script"] == "gurmukhi"
+
+    def test_region_meta_has_script_field(self) -> None:
+        tess = TesseractOutput(SAMPLE_GURMUKHI_JSON)
+        proc = DocumentProcessor("gurmukhi")
+        result = proc.process(tess)
+        for region in result["metadata"]["regions"]:
+            assert region["script"] == "gurmukhi"
 
     def test_correction_report_is_list(self) -> None:
         tess = TesseractOutput(SAMPLE_GURMUKHI_JSON)
@@ -160,6 +176,7 @@ class TestProcessDocumentConvenience:
         assert (out_dir / "corrected_text.txt").exists()
         assert (out_dir / "correction_report.json").exists()
         assert (out_dir / "metadata.json").exists()
+        assert (out_dir / "flagged.json").exists()
 
     @pytest.mark.parametrize("lang", ["gurmukhi", "punjabi", "hindi", "urdu", "farsi"])
     def test_all_languages(self, lang: str) -> None:

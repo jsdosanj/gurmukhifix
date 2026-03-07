@@ -4,8 +4,8 @@ Detects broken ligatures using Unicode block analysis and (optionally)
 positional bounding-box data from Tesseract JSON. Reassembles sequences
 flagged as separate characters that belong to a single glyph.
 
-Rules are stored in per-language YAML configs; no script-specific logic
-is hardcoded in this module.
+Rules are stored in per-language YAML configs; this module also includes
+small script-specific helpers (for example, join behaviour for RTL scripts).
 """
 
 from __future__ import annotations

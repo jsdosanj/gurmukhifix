@@ -19,15 +19,6 @@ SEVERITY_REJECT = "REJECT"
 SEVERITY_WARN = "WARN"
 SEVERITY_REVIEW = "REVIEW"
 
-# Unicode script block ranges for quick membership checks
-_SCRIPT_RANGES: dict[str, list[tuple[int, int]]] = {
-    "gurmukhi": [(0x0A00, 0x0A7F)],
-    "punjabi": [(0x0A00, 0x0A7F)],
-    "hindi": [(0x0900, 0x097F)],
-    "urdu": [(0x0600, 0x06FF), (0x0750, 0x077F), (0xFB50, 0xFDFF), (0xFE70, 0xFEFF)],
-    "farsi": [(0x0600, 0x06FF), (0x0750, 0x077F), (0xFB50, 0xFDFF), (0xFE70, 0xFEFF)],
-}
-
 
 def _load_config(language: str) -> dict[str, Any]:
     path = _CONFIG_DIR / f"{language}.yaml"
@@ -106,9 +97,25 @@ class ScriptValidator:
         violations: list[dict[str, Any]] = []
 
         if self.language in ("gurmukhi", "punjabi"):
-            # Gurmukhi dependent vowels: U+0A3E–U+0A4C, excluding sihari U+0A3F (handled separately)
-            matra_range = regex.compile(r"[\u0A3E\u0A40-\u0A4C]")
             consonant_range = regex.compile(r"[\u0A15-\u0A39\u0A59-\u0A5E]")
+
+            # Sihari (U+0A3F) must follow a base consonant in Unicode order
+            sihari = "\u0A3F"
+            for i, ch in enumerate(text):
+                if ch == sihari:
+                    if i == 0 or not consonant_range.match(text[i - 1]):
+                        violations.append(
+                            {
+                                "rule": "orphaned_matra",
+                                "description": "sihari (ਿ) with no preceding base consonant",
+                                "severity": SEVERITY_WARN,
+                                "match": ch,
+                                "position": i,
+                            }
+                        )
+
+            # Other Gurmukhi dependent vowels: U+0A3E, U+0A40–U+0A4C
+            matra_range = regex.compile(r"[\u0A3E\u0A40-\u0A4C]")
             for m in matra_range.finditer(text):
                 pos = m.start()
                 if pos == 0 or not consonant_range.match(text[pos - 1]):

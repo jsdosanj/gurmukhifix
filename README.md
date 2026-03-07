@@ -156,6 +156,7 @@ promoted to the primary confusion dictionary for that script.
 
 ```bash
 # Review flagged regions and add corrections to the database
+# (flagged.json is written alongside the other artifacts by 'correct' and 'batch')
 scriptfix review \
   --flagged ./results/flagged.json \
   --corrections ./my_corpus/corrections.db
@@ -183,8 +184,9 @@ To build a correction profile specific to, say, 19th-century Punjabi manuscripts
 
 ### Adding new language rules
 
-All correction logic lives in `configs/{language}.yaml`. Python modules contain
-no script-specific logic. To add or update rules:
+Most high-level correction rules live in `configs/{language}.yaml`. Some
+low-level script-specific handling (for example, ligature, diacritic, and
+validator behaviour) is implemented in Python modules. To add or update rules:
 
 1. Fork the repository.
 2. Edit the relevant `configs/{language}.yaml`.
@@ -240,35 +242,34 @@ reconstruct document layout from the output.
 ## Repository structure
 
 ```
+configs/
+  gurmukhi.yaml       ← Gurmukhi confusion pairs and rules
+  punjabi.yaml        ← Punjabi-specific rules
+  urdu.yaml           ← Urdu nukta and hamza rules
+  hindi.yaml          ← Hindi matra and anusvara rules
+  farsi.yaml          ← Farsi yeh, kaf/gaf, and joining rules
 scriptfix/
-  configs/
-    gurmukhi.yaml       ← Gurmukhi confusion pairs and rules
-    punjabi.yaml        ← Punjabi-specific rules
-    urdu.yaml           ← Urdu nukta and hamza rules
-    hindi.yaml          ← Hindi matra and anusvara rules
-    farsi.yaml          ← Farsi yeh, kaf/gaf, and joining rules
-  scriptfix/
-    corrector.py        ← Character Correction Engine
-    validator.py        ← Script Integrity Validator
-    ligature.py         ← Ligature and Conjunct Handler
-    diacritic.py        ← Diacritic and Nukta Recovery
-    integration.py      ← Tesseract JSON parsing and pipeline orchestration
-    learner.py          ← SQLite learning and Bayesian promotion
-    cli.py              ← Click CLI
-  tests/
-    ground_truth/       ← JSON ground-truth samples (one file per language)
-    test_corrector.py
-    test_validator.py
-    test_integration.py
-    test_learner.py
-    test_ligature_diacritic.py
-    test_cli.py
-    benchmark.py        ← CER/WER benchmark script
-  corrections.db        ← gitignored; created at runtime
-  schema.sql            ← corrections.db schema
-  pyproject.toml
-  LICENSE
-  README.md
+  corrector.py        ← Character Correction Engine
+  validator.py        ← Script Integrity Validator
+  ligature.py         ← Ligature and Conjunct Handler
+  diacritic.py        ← Diacritic and Nukta Recovery
+  integration.py      ← Tesseract JSON parsing and pipeline orchestration
+  learner.py          ← SQLite learning and Bayesian promotion
+  cli.py              ← Click CLI
+tests/
+  ground_truth/       ← JSON ground-truth samples (one file per language)
+  test_corrector.py
+  test_validator.py
+  test_integration.py
+  test_learner.py
+  test_ligature_diacritic.py
+  test_cli.py
+  benchmark.py        ← CER/WER benchmark script
+corrections.db        ← gitignored; created at runtime
+schema.sql            ← corrections.db schema
+pyproject.toml
+LICENSE
+README.md
 ```
 
 ---

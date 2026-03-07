@@ -23,8 +23,25 @@ class CorrectionStore:
     """Manages the corrections SQLite database."""
 
     def __init__(self, db_path: Path | str = _DEFAULT_DB) -> None:
-        self.db_path = Path(db_path)
-        self._conn = sqlite3.connect(str(self.db_path))
+        # Preserve special SQLite strings (e.g. ":memory:") and URI filenames,
+        # and only coerce real filesystem paths to Path.
+        if isinstance(db_path, Path):
+            self.db_path: Path | str = db_path
+        elif isinstance(db_path, str):
+            if db_path == ":memory:" or db_path.startswith("file:"):
+                self.db_path = db_path
+            else:
+                self.db_path = Path(db_path)
+        else:
+            self.db_path = Path(db_path)
+
+        if isinstance(self.db_path, Path):
+            self._conn = sqlite3.connect(str(self.db_path))
+        else:
+            # For URI-style filenames, enable SQLite URI handling
+            self._conn = sqlite3.connect(
+                self.db_path, uri=isinstance(self.db_path, str) and self.db_path.startswith("file:")
+            )
         self._conn.row_factory = sqlite3.Row
         self._ensure_schema()
 

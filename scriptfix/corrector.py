@@ -1,8 +1,9 @@
 """Character Correction Engine for scriptfix.
 
-Loads per-script confusion dictionaries from YAML config files and applies
-character-level corrections to Tesseract OCR output. Uses n-gram analysis
-to detect impossible phonetic sequences and ranks correction candidates.
+Loads per-script correction rules from YAML config files and applies
+character-level confusion and diacritic substitutions to Tesseract OCR
+output. Provides optional validation of impossible character sequences
+using configurable regular-expression patterns.
 """
 
 from __future__ import annotations
@@ -60,6 +61,14 @@ class CharacterCorrector:
             pat = regex.compile(rule["pattern"])
             self._impossible.append((pat, rule["description"], rule.get("severity", "WARN")))
 
+        # Precompile combined substitution patterns for efficiency
+        self._confusion_pattern: regex.Pattern[str] | None = self._compile_map_pattern(
+            self._confusion_map
+        )
+        self._diacritic_pattern: regex.Pattern[str] | None = self._compile_map_pattern(
+            self._diacritic_map
+        )
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -74,10 +83,10 @@ class CharacterCorrector:
         text = _normalize(text, self.norm_form)
         corrections: list[dict[str, Any]] = []
 
-        text, c = self._apply_map(text, self._confusion_map, "confusion_pair")
+        text, c = self._apply_compiled(text, self._confusion_map, self._confusion_pattern, "confusion_pair")
         corrections.extend(c)
 
-        text, c = self._apply_map(text, self._diacritic_map, "diacritic_pair")
+        text, c = self._apply_compiled(text, self._diacritic_map, self._diacritic_pattern, "diacritic_pair")
         corrections.extend(c)
 
         return text, corrections
@@ -105,20 +114,25 @@ class CharacterCorrector:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _apply_map(
-        text: str,
-        mapping: dict[str, str],
-        rule_name: str,
-    ) -> tuple[str, list[dict[str, Any]]]:
-        """Replace all occurrences of keys in *mapping* with their values."""
-        corrections: list[dict[str, Any]] = []
+    def _compile_map_pattern(mapping: dict[str, str]) -> "regex.Pattern[str] | None":
+        """Compile a combined regex pattern for all keys in *mapping*, longest first."""
         if not mapping:
-            return text, corrections
-
-        # Build a combined pattern matching any key, longest first
+            return None
         sorted_keys = sorted(mapping.keys(), key=len, reverse=True)
         escaped = [regex.escape(k) for k in sorted_keys]
-        pattern = regex.compile("|".join(escaped))
+        return regex.compile("|".join(escaped))
+
+    @staticmethod
+    def _apply_compiled(
+        text: str,
+        mapping: dict[str, str],
+        pattern: "regex.Pattern[str] | None",
+        rule_name: str,
+    ) -> tuple[str, list[dict[str, Any]]]:
+        """Replace occurrences of mapping keys using a precompiled *pattern*."""
+        corrections: list[dict[str, Any]] = []
+        if not mapping or pattern is None:
+            return text, corrections
 
         def replacer(m: regex.Match[str]) -> str:
             original = m.group()

@@ -1,17 +1,17 @@
 """Integration Layer for scriptfix.
 
 Accepts Tesseract JSON/hOCR output, applies all correction passes,
-and produces the three output artifacts:
+and produces the four output artifacts:
   - corrected_text.txt
   - correction_report.json
   - metadata.json
+  - flagged.json
 """
 
 from __future__ import annotations
 
 import json
 import time
-import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -114,6 +114,7 @@ class DocumentProcessor:
                 "bbox": bbox,
                 "original_confidence": conf,
                 "alternatives": alternatives,
+                "script": self.language,
             }
 
             # --- Confidence-based routing ---
@@ -193,7 +194,7 @@ class DocumentProcessor:
         }
 
     def write_outputs(self, result: dict[str, Any], output_dir: Path | str) -> None:
-        """Write the three output artifacts to *output_dir*."""
+        """Write the four output artifacts to *output_dir*."""
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -206,6 +207,10 @@ class DocumentProcessor:
         )
         (output_dir / "metadata.json").write_text(
             json.dumps(result["metadata"], ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        (output_dir / "flagged.json").write_text(
+            json.dumps(result["flagged"], ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
 

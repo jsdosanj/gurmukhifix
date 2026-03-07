@@ -26,14 +26,25 @@ class TestLigatureHandler:
         # Arabic letters that should join: ب + ه → به
         broken = "ب ه"
         result, corrections = handler.reassemble(broken)
-        # Should rejoin dual-joining letters
-        assert isinstance(result, str)
+        # Should rejoin dual-joining letters and emit a correction record
+        assert result == "به"
+        assert isinstance(corrections, list)
+        assert len(corrections) > 0
+        assert isinstance(corrections[0], dict)
+        assert "rule" in corrections[0]
+        assert corrections[0]["rule"] == "rtl_join_repair"
 
     def test_rtl_join_repair_farsi(self) -> None:
         handler = LigatureHandler("farsi")
         broken = "ک ه"
         result, corrections = handler.reassemble(broken)
-        assert isinstance(result, str)
+        # Should rejoin dual-joining letters and emit a correction record
+        assert result == "که"
+        assert isinstance(corrections, list)
+        assert len(corrections) > 0
+        assert isinstance(corrections[0], dict)
+        assert "rule" in corrections[0]
+        assert corrections[0]["rule"] == "rtl_join_repair"
 
     def test_detect_broken_no_rules(self) -> None:
         handler = LigatureHandler("hindi")
