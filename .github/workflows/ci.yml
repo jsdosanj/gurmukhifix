@@ -17,10 +17,10 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -31,6 +31,7 @@ jobs:
         run: pytest tests/ -v
 
       - name: Build package
+        if: matrix.python-version == '3.12'
         run: |
           pip install build
           python -m build

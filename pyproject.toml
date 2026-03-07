@@ -30,7 +30,6 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/jsdosanj/gurmukhifix"
 Repository = "https://github.com/jsdosanj/gurmukhifix"
 Issues = "https://github.com/jsdosanj/gurmukhifix/issues"
 
