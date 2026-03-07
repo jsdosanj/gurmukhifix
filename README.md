@@ -84,8 +84,19 @@ layout) and `--output-type json`. scriptfix reads that JSON directly.
 
 ## Installation
 
+Install from [PyPI](https://pypi.org/project/scriptfix/):
+
 ```bash
 pip install scriptfix
+```
+
+> **Note:** The PyPI package name is **`scriptfix`**, not `gurmukhifix`.
+> The repository is named `gurmukhifix`, but the installable package is `scriptfix`.
+
+You can also install directly from GitHub to get the latest development version:
+
+```bash
+pip install git+https://github.com/jsdosanj/gurmukhifix.git
 ```
 
 ### System dependencies
