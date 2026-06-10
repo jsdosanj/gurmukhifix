@@ -14,6 +14,8 @@ from typing import Any
 import regex
 import yaml
 
+from .validator import ScriptValidator
+
 
 _CONFIG_DIR = Path(__file__).parent / "configs"
 
@@ -33,6 +35,7 @@ class DiacriticRecovery:
         self.language = language
         self.config = _load_config(language)
         self.norm_form: str = self.config.get("normalization", "NFC")
+        self._validator = ScriptValidator(language)
 
     # ------------------------------------------------------------------
     # Public API
@@ -51,6 +54,8 @@ class DiacriticRecovery:
             corrections: List of correction records.
         """
         text = unicodedata.normalize(self.norm_form, text)
+        original = text
+        baseline_badness = self._validator.badness(text)
         corrections: list[dict[str, Any]] = []
 
         if self.language in ("gurmukhi", "punjabi"):
@@ -65,6 +70,11 @@ class DiacriticRecovery:
         if alternatives:
             text, c = self._recover_nukta_from_alternatives(text, alternatives)
             corrections.extend(c)
+
+        # Safety net: heuristic recovery must never make a word *less* valid than
+        # it was. If it did, discard the changes and keep the original text.
+        if text != original and self._validator.badness(text) > baseline_badness:
+            return original, []
 
         return text, corrections
 
@@ -86,7 +96,23 @@ class DiacriticRecovery:
         i = 0
         while i < len(text):
             ch = text[i]
-            if ch == sihari and i + 1 < len(text) and gurmukhi_consonant.match(text[i + 1]):
+            # Only reorder a sihari that is genuinely misplaced: it appears
+            # *before* a consonant (its visual position) without already
+            # following a base consonant. A sihari that already follows a
+            # consonant is correctly encoded and must be left alone — swapping
+            # it would corrupt valid words such as ਸਾਹਿਬ.
+            # Look past an attached nukta when checking for a base consonant —
+            # a sihari after C + nukta is correctly placed.
+            j = i - 1
+            if j >= 0 and text[j] == "਼":
+                j -= 1
+            preceded_by_consonant = j >= 0 and bool(gurmukhi_consonant.match(text[j]))
+            if (
+                ch == sihari
+                and not preceded_by_consonant
+                and i + 1 < len(text)
+                and gurmukhi_consonant.match(text[i + 1])
+            ):
                 # Sihari before consonant — swap
                 consonant = text[i + 1]
                 original = ch + consonant

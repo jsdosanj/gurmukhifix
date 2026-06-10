@@ -2,8 +2,16 @@
 
 Loads per-script correction rules from YAML config files and applies
 character-level confusion and diacritic substitutions to Tesseract OCR
-output. Provides optional validation of impossible character sequences
-using configurable regular-expression patterns.
+output.
+
+Corrections are **evidence-gated**: a confusion/diacritic substitution is only
+applied when it strictly lowers the script-validity "badness" of the
+surrounding word (see :class:`scriptfix.validator.ScriptValidator`). Well-formed
+text scores zero badness, so it is never modified — this is what stops the blind
+bidirectional find-replace that would otherwise corrupt correct OCR output.
+Substitutions between two individually-valid characters (e.g. an aspirated-pair
+confusion) carry no validity evidence and are therefore left untouched rather
+than guessed at.
 """
 
 from __future__ import annotations
@@ -14,6 +22,8 @@ from typing import Any
 
 import regex
 import yaml
+
+from .validator import ScriptValidator
 
 _CONFIG_DIR = Path(__file__).parent / "configs"
 
@@ -61,20 +71,28 @@ class CharacterCorrector:
             pat = regex.compile(rule["pattern"])
             self._impossible.append((pat, rule["description"], rule.get("severity", "WARN")))
 
-        # Precompile combined substitution patterns for efficiency
-        self._confusion_pattern: regex.Pattern[str] | None = self._compile_map_pattern(
-            self._confusion_map
-        )
-        self._diacritic_pattern: regex.Pattern[str] | None = self._compile_map_pattern(
-            self._diacritic_map
-        )
+        # Combined candidate list (key -> replacement, rule) used by the
+        # evidence-gated search, longest keys first so multi-codepoint
+        # substitutions are considered before single-codepoint ones.
+        self._candidates: list[tuple[str, str, str]] = [
+            (k, v, "confusion_pair") for k, v in self._confusion_map.items()
+        ] + [(k, v, "diacritic_pair") for k, v in self._diacritic_map.items()]
+        self._candidates.sort(key=lambda t: len(t[0]), reverse=True)
+
+        # Validator used to score the badness of candidate corrections.
+        self._validator = ScriptValidator(language)
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
     def correct(self, text: str) -> tuple[str, list[dict[str, Any]]]:
-        """Apply all corrections to *text*.
+        """Apply evidence-gated corrections to *text*.
+
+        Greedily applies the single confusion/diacritic substitution that most
+        reduces the script-validity badness of *text*, repeating until no
+        substitution improves it. Well-formed text (badness 0) is returned
+        unchanged, so correct OCR output is never corrupted.
 
         Returns:
             corrected_text: The corrected string.
@@ -82,12 +100,35 @@ class CharacterCorrector:
         """
         text = _normalize(text, self.norm_form)
         corrections: list[dict[str, Any]] = []
+        if not self._candidates:
+            return text, corrections
 
-        text, c = self._apply_compiled(text, self._confusion_map, self._confusion_pattern, "confusion_pair")
-        corrections.extend(c)
+        # Each accepted substitution strictly lowers badness (bounded below by
+        # 0), so the loop terminates; the cap is a defensive backstop only.
+        max_iterations = len(text) + 8
+        for _ in range(max_iterations):
+            base = self._validator.badness(text)
+            if base <= 0:
+                break  # already well-formed — no evidence to correct against
 
-        text, c = self._apply_compiled(text, self._diacritic_map, self._diacritic_pattern, "diacritic_pair")
-        corrections.extend(c)
+            best: tuple[float, int, str, str, str] | None = None  # delta,pos,key,repl,rule
+            for pos in range(len(text)):
+                for key, repl, rule in self._candidates:
+                    if not text.startswith(key, pos):
+                        continue
+                    candidate = text[:pos] + repl + text[pos + len(key):]
+                    delta = base - self._validator.badness(candidate)
+                    if delta > 0 and (best is None or delta > best[0]):
+                        best = (delta, pos, key, repl, rule)
+
+            if best is None:
+                break  # no substitution provides positive evidence — stop guessing
+
+            _, pos, key, repl, rule = best
+            corrections.append(
+                {"original": key, "corrected": repl, "rule": rule, "position": pos}
+            )
+            text = text[:pos] + repl + text[pos + len(key):]
 
         return text, corrections
 
@@ -112,43 +153,6 @@ class CharacterCorrector:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-
-    @staticmethod
-    def _compile_map_pattern(mapping: dict[str, str]) -> "regex.Pattern[str] | None":
-        """Compile a combined regex pattern for all keys in *mapping*, longest first."""
-        if not mapping:
-            return None
-        sorted_keys = sorted(mapping.keys(), key=len, reverse=True)
-        escaped = [regex.escape(k) for k in sorted_keys]
-        return regex.compile("|".join(escaped))
-
-    @staticmethod
-    def _apply_compiled(
-        text: str,
-        mapping: dict[str, str],
-        pattern: "regex.Pattern[str] | None",
-        rule_name: str,
-    ) -> tuple[str, list[dict[str, Any]]]:
-        """Replace occurrences of mapping keys using a precompiled *pattern*."""
-        corrections: list[dict[str, Any]] = []
-        if not mapping or pattern is None:
-            return text, corrections
-
-        def replacer(m: regex.Match[str]) -> str:
-            original = m.group()
-            corrected = mapping[original]
-            corrections.append(
-                {
-                    "original": original,
-                    "corrected": corrected,
-                    "rule": rule_name,
-                    "position": m.start(),
-                }
-            )
-            return corrected
-
-        new_text = pattern.sub(replacer, text)
-        return new_text, corrections
 
     def get_confusion_map(self) -> dict[str, str]:
         """Return a copy of the confusion mapping."""

@@ -31,7 +31,7 @@ def _load_config(language: str) -> dict[str, Any]:
 class LigatureHandler:
     """Detects and reassembles broken ligatures for a given script."""
 
-    def __init__(self, language: str) -> None:
+    def __init__(self, language: str, rtl_join_repair: bool | None = None) -> None:
         self.language = language
         self.config = _load_config(language)
         self.norm_form: str = self.config.get("normalization", "NFC")
@@ -47,6 +47,16 @@ class LigatureHandler:
 
         # Arabic/Urdu/Farsi: joining characters require context
         self._is_rtl = self.config.get("direction", "ltr") == "rtl"
+
+        # Heuristic RTL space removal is OFF by default: without glyph-level
+        # bounding-box evidence it cannot tell a broken ligature from a real
+        # word boundary, and Arabic/Urdu/Farsi place spaces after dual-joining
+        # letters constantly — so the heuristic deletes legitimate spaces. Enable
+        # it explicitly (constructor arg or `rtl_join_repair: true` in the config)
+        # only when inputs are known to suffer from glyph-splitting.
+        if rtl_join_repair is None:
+            rtl_join_repair = bool(self.config.get("rtl_join_repair", False))
+        self._rtl_join_repair = rtl_join_repair
 
     # ------------------------------------------------------------------
     # Public API
@@ -81,9 +91,10 @@ class LigatureHandler:
                     text = text[:pos] + joined + text[pos + len(broken):]
                     idx = pos + len(joined)
 
-        # For RTL scripts: detect common broken pairs (space-separated letters
-        # that should be joined based on Arabic joining rules)
-        if self._is_rtl:
+        # For RTL scripts: optionally rejoin space-separated letters. Disabled by
+        # default (see __init__) because it cannot distinguish broken glyphs from
+        # genuine word boundaries.
+        if self._is_rtl and self._rtl_join_repair:
             text, rtl_corrections = self._fix_rtl_joins(text)
             corrections.extend(rtl_corrections)
 
