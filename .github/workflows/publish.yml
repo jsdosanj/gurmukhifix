@@ -1,8 +1,22 @@
 name: Publish to PyPI
 
+# Publishes the `gurmukhifix` package to PyPI via Trusted Publishing (OIDC) — no
+# API tokens stored in the repo. Triggers:
+#   • automatically when a GitHub Release is published
+#   • manually from the Actions tab (workflow_dispatch), with an optional
+#     TestPyPI target for a dry run.
+# See PUBLISHING.md for the full step-by-step.
+
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to publish"
+        type: choice
+        default: pypi
+        options: [pypi, testpypi]
 
 permissions:
   contents: read
@@ -19,10 +33,13 @@ jobs:
           python-version: "3.12"
 
       - name: Install build tools
-        run: pip install build
+        run: pip install build twine
 
-      - name: Build package
+      - name: Build sdist and wheel
         run: python -m build
+
+      - name: Check distribution metadata
+        run: python -m twine check dist/*
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -30,8 +47,10 @@ jobs:
           name: dist
           path: dist/
 
-  publish:
+  publish-pypi:
+    # Real PyPI: on a published release, or a manual run targeting pypi.
     needs: build
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -45,3 +64,23 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@27f0f3c4edb107f8364379c4030f2bc510a6a8b4 # release/v1
+
+  publish-testpypi:
+    # TestPyPI dry run: manual runs targeting testpypi.
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      id-token: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@27f0f3c4edb107f8364379c4030f2bc510a6a8b4 # release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/

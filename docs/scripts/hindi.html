@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hindi OCR correction — gurmukhifix</title>
+  <meta name="description" content="How gurmukhifix cleans Tesseract OCR for Hindi into well-formed Unicode, and why it beats Tesseract alone." />
+  <link rel="canonical" href="https://jsdosanj.github.io/gurmukhifix/scripts/hindi.html" />
+  <meta property="og:title" content="Hindi OCR correction — gurmukhifix" />
+  <meta property="og:description" content="How gurmukhifix cleans Tesseract OCR for Hindi into well-formed Unicode, and why it beats Tesseract alone." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0a0b14" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="bg-aurora" aria-hidden="true"></div>
+  <header class="nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">ਸ</span>
+      <span class="brand-name">gurmukhifix</span>
+    </a>
+    <nav class="nav-links">
+        <a href="../index.html#demo">Demo</a>
+        <a href="../scripts/" class="here">Scripts</a>
+        <a href="../blog/">Blog</a>
+        <a href="../index.html#install">Install</a>
+        <a href="../license.html">License</a>
+        <a class="nav-cta" href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <section class="doc-hero">
+    <div class="doc-wrap">
+      <a class="back" href="../scripts/">← All scripts</a>
+      <div class="doc-title"><span class="doc-glyph dev">हि</span>
+        <div><h1>Hindi <span class="native dev">हिन्दी</span></h1><p>Hindi written in the Devanagari script.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <div class="doc-wrap">
+      <h2>Where it's used</h2>
+      <p class="lead">Hindi is written in Devanagari and appears across north-Indian printed and handwritten records. gurmukhifix focuses on matra (vowel-sign) attachment and nasalisation.</p>
+    </div>
+  </section>
+
+  <section class="doc-section alt">
+    <div class="doc-wrap">
+      <h2>What Tesseract gets wrong</h2>
+      <div class="problem-grid">
+        <article class="problem"><h3>Matra with no consonant</h3><p>A dependent vowel (matra) must attach to a consonant. A matra at the start of a word, or two in a row, is structurally impossible and signals an OCR error.</p><div class="ba"><code class="dev bad">ाकमल</code><span>→</span><code class="dev good">flagged</code></div></article>
+        <article class="problem"><h3>Anusvara vs chandrabindu</h3><p>The nasalisation marks ं (anusvara) and ँ (chandrabindu) are easily confused.</p></article>
+        <article class="problem"><h3>Sibilant ambiguity</h3><p>श, ष and स look similar in many hands and are routinely swapped.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <div class="doc-wrap">
+      <h2>How gurmukhifix fixes it</h2>
+      <ul class="fix-list">
+          <li>Flags matra-at-word-start and consecutive matras as REJECT for review.</li>
+          <li>Corrects anusvara/chandrabindu and sibilant confusions when it improves validity.</li>
+          <li>Restores nukta order for क़ ख़ ग़ ज़ फ़.</li>
+          <li>Normalises to NFC and reports out-of-script code-points.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="doc-section alt">
+    <div class="doc-wrap">
+      <h2>Examples</h2>
+      <table class="ex-table">
+        <thead><tr><th>Raw OCR</th><th>gurmukhifix</th><th>What happened</th></tr></thead>
+        <tbody>
+          <tr><td><code class="dev">नमस्ते दुनिया</code></td><td><code class="dev good">नमस्ते दुनिया</code></td><td>Already correct — untouched</td></tr>
+          <tr><td><code class="dev">हिंदी भाषा</code></td><td><code class="dev good">हिंदी भाषा</code></td><td>Valid — passes through</td></tr>
+          <tr><td><code class="dev">ाकमल देश</code></td><td><code class="dev good">ाकमल देश ⚑</code></td><td>Vowel sign at word start — flagged for review</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <div class="doc-wrap">
+      <h2>Why this beats the alternatives</h2>
+      <div class="beat-grid">
+        <div class="beat"><h3>vs. Tesseract alone</h3><p>Tesseract turns pixels into characters. It has <em>no</em> linguistic knowledge — it can't know that a dependent vowel may not begin a word, or that a sign written to the left of a letter must be encoded after it. gurmukhifix adds exactly those rules.</p></div>
+        <div class="beat"><h3>vs. find-and-replace / spellcheck</h3><p>A blind substitution table rewrites correct letters too and corrupts good text. gurmukhifix is <strong>evidence-gated</strong>: a fix is applied only when it makes the text more valid, so already-correct Unicode is never changed.</p></div>
+        <div class="beat"><h3>vs. doing nothing</h3><p>Raw OCR often <em>looks</em> right but is malformed Unicode — wrong code-point order, dropped marks. That silently breaks search, indexing, fonts and copy-paste. gurmukhifix produces canonical, well-formed text.</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="doc-cta"><div class="doc-wrap"><a class="btn btn-primary" href="../index.html?script=hindi#demo">Try Hindi in the playground →</a></div></section>
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <span class="brand-mark small">ਸ</span>
+        <strong>gurmukhifix</strong>
+        <p>OCR post-processing for South Asian &amp; Persian scripts. Free &amp; open source under the MIT licence.</p>
+      </div>
+      <div class="footer-links">
+        <a href="../scripts/">Scripts</a>
+        <a href="../blog/">Blog</a>
+        <a href="../license.html">Licence</a>
+        <a href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://pypi.org/project/gurmukhifix/" target="_blank" rel="noopener">PyPI</a>
+      </div>
+    </div>
+    <p class="footer-fine">Demo runs entirely client-side. Built for researchers, archivists and digitisation teams.</p>
+  </footer>
+</body>
+</html>

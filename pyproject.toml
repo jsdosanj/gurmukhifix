@@ -3,7 +3,7 @@ requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "scriptfix"
+name = "gurmukhifix"
 version = "0.1.0"
 description = "Tesseract OCR post-processing engine for handwritten South Asian and Persian scripts"
 readme = "README.md"
@@ -11,7 +11,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
 authors = [
-    { name = "scriptfix contributors" }
+    { name = "gurmukhifix contributors" }
 ]
 keywords = ["ocr", "gurmukhi", "punjabi", "urdu", "hindi", "farsi", "tesseract", "nlp"]
 classifiers = [
@@ -43,11 +43,11 @@ dev = [
 ]
 
 [project.scripts]
-scriptfix = "scriptfix.cli:cli"
+gurmukhifix = "gurmukhifix.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["scriptfix*"]
+include = ["gurmukhifix*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -56,4 +56,4 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 
 [tool.setuptools.package-data]
-scriptfix = ["py.typed", "configs/*.yaml"]
+gurmukhifix = ["py.typed", "configs/*.yaml"]

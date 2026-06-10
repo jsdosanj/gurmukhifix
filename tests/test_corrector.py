@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from scriptfix.corrector import CharacterCorrector, correct_text
+from gurmukhifix.corrector import CharacterCorrector, correct_text
 
 
 class TestCharacterCorrectorGurmukhi:

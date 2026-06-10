@@ -3,197 +3,139 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>scriptfix — OCR post-processing for South Asian &amp; Persian scripts</title>
-  <meta name="description" content="scriptfix corrects Tesseract OCR output for handwritten Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — fixing sihari placement, nukta order and diacritics into clean Unicode." />
-  <meta property="og:title" content="scriptfix — OCR post-processing for Gurmukhi & Indic scripts" />
-  <meta property="og:description" content="Turn messy Tesseract output into clean, well-formed Unicode Gurmukhi/Punjabi. Evidence-gated corrections that never corrupt good text." />
+  <title>gurmukhifix — OCR post-processing for South Asian &amp; Persian scripts</title>
+  <meta name="description" content="gurmukhifix corrects Tesseract OCR for handwritten Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — fixing sihari placement, nukta order and diacritics into clean Unicode. Free &amp; open source." />
+  <link rel="canonical" href="https://jsdosanj.github.io/gurmukhifix/" />
+  <meta property="og:title" content="gurmukhifix — OCR post-processing for South Asian &amp; Persian scripts" />
+  <meta property="og:description" content="gurmukhifix corrects Tesseract OCR for handwritten Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — fixing sihari placement, nukta order and diacritics into clean Unicode. Free &amp; open source." />
   <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0a0b14" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
   <div class="bg-aurora" aria-hidden="true"></div>
-
-  <!-- Nav -->
   <header class="nav">
-    <a class="brand" href="#top">
+    <a class="brand" href="index.html">
       <span class="brand-mark">ਸ</span>
-      <span class="brand-name">scriptfix</span>
+      <span class="brand-name">gurmukhifix</span>
     </a>
     <nav class="nav-links">
-      <a href="#demo">Demo</a>
-      <a href="#how">How it works</a>
-      <a href="#scripts">Scripts</a>
-      <a href="#install">Install</a>
-      <a class="nav-cta" href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub ↗</a>
+        <a href="index.html#demo" class="here">Demo</a>
+        <a href="scripts/">Scripts</a>
+        <a href="blog/">Blog</a>
+        <a href="index.html#install">Install</a>
+        <a href="license.html">License</a>
+        <a class="nav-cta" href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub ↗</a>
     </nav>
   </header>
 
-  <!-- Hero -->
   <section class="hero" id="top">
     <div class="hero-inner">
       <div class="badge">Tesseract post-processing engine</div>
       <h1>Clean Unicode for<br /><span class="grad">handwritten Gurmukhi</span> &amp; Indic scripts</h1>
-      <p class="lede">
-        OCR mangles connected scripts: sihari lands before its consonant, nuktas
-        drift, diacritics scatter. <strong>scriptfix</strong> repairs Tesseract output
-        into well-formed Unicode for Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi —
-        and never corrupts text that was already correct.
-      </p>
+      <p class="lede">OCR mangles connected scripts: sihari lands before its consonant, nuktas drift, diacritics scatter. <strong>gurmukhifix</strong> repairs Tesseract output into well-formed Unicode for Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — and never corrupts text that was already correct.</p>
       <div class="hero-cta">
         <a class="btn btn-primary" href="#demo">Try the live demo</a>
-        <a class="btn btn-ghost" href="https://pypi.org/project/scriptfix/" target="_blank" rel="noopener">pip install scriptfix</a>
+        <a class="btn btn-ghost" href="https://pypi.org/project/gurmukhifix/" target="_blank" rel="noopener">pip install gurmukhifix</a>
       </div>
       <div class="hero-proof">
         <div><b>+37.8%</b><span>avg CER improvement</span></div>
-        <div><b>5+</b><span>scripts supported</span></div>
+        <div><b>6</b><span>scripts supported</span></div>
         <div><b>0</b><span>corruption of clean text</span></div>
       </div>
     </div>
     <div class="hero-card">
-      <div class="mini-row">
-        <span class="mini-label">Raw OCR</span>
-        <code class="mini gur">ਿਸੱਖ ਧਰਮ</code>
-      </div>
-      <div class="mini-arrow">↓ scriptfix</div>
-      <div class="mini-row">
-        <span class="mini-label">Unicode</span>
-        <code class="mini gur good">ਸਿੱਖ ਧਰਮ</code>
-      </div>
+      <div class="mini-row"><span class="mini-label">Raw OCR</span><code class="mini gur">ਿਸੱਖ ਧਰਮ</code></div>
+      <div class="mini-arrow">↓ gurmukhifix</div>
+      <div class="mini-row"><span class="mini-label">Unicode</span><code class="mini gur good">ਸਿੱਖ ਧਰਮ</code></div>
       <p class="mini-note">Sihari <code>ਿ</code> reordered after its base consonant — the #1 systematic Gurmukhi OCR error.</p>
     </div>
   </section>
 
-  <!-- Demo -->
   <section class="demo" id="demo">
-    <div class="section-head">
-      <h2>Interactive playground</h2>
-      <p>Paste raw OCR text and watch it become clean, well-formed Unicode. Everything runs in your browser.</p>
-    </div>
-
+    <div class="section-head"><h2>Interactive playground</h2><p>Paste raw OCR text and watch it become clean, well-formed Unicode. Everything runs in your browser.</p></div>
     <div class="demo-toolbar">
-      <label class="field">
-        <span>Script</span>
-        <select id="script-select"></select>
-      </label>
+      <label class="field"><span>Script</span><select id="script-select"></select></label>
       <div class="examples" id="examples"></div>
       <button class="btn btn-ghost small" id="ocr-toggle" type="button">📷 Try image OCR <span class="exp">experimental</span></button>
     </div>
-
     <div class="ocr-panel" id="ocr-panel" hidden>
-      <p>Upload a photo or scan of a single line/word. In-browser OCR uses
-        <a href="https://tesseract.projectnaptha.com/" target="_blank" rel="noopener">Tesseract.js</a>,
-        then scriptfix cleans the result. <strong>Handwriting accuracy is limited</strong> — this is a demo of the pipeline, not production OCR.</p>
-      <div class="ocr-row">
-        <input type="file" id="ocr-file" accept="image/*" />
-        <button class="btn btn-primary small" id="ocr-run" type="button" disabled>Run OCR → scriptfix</button>
-        <span class="ocr-status" id="ocr-status"></span>
-      </div>
+      <p>Upload a photo or scan of a single line/word. In-browser OCR uses <a href="https://tesseract.projectnaptha.com/" target="_blank" rel="noopener">Tesseract.js</a>, then gurmukhifix cleans the result. <strong>Handwriting accuracy is limited</strong> — this demos the pipeline, not production OCR.</p>
+      <div class="ocr-row"><input type="file" id="ocr-file" accept="image/*" /><button class="btn btn-primary small" id="ocr-run" type="button" disabled>Run OCR → gurmukhifix</button><span class="ocr-status" id="ocr-status"></span></div>
     </div>
-
     <div class="demo-grid">
-      <div class="pane">
-        <div class="pane-head"><span>Input — raw OCR</span></div>
-        <textarea id="input" class="script-text" spellcheck="false" placeholder="Paste OCR output here…"></textarea>
-      </div>
-      <div class="pane">
-        <div class="pane-head">
-          <span>Output — clean Unicode</span>
-          <button class="copy-btn" id="copy-btn" type="button">Copy</button>
-        </div>
-        <div id="output" class="script-text output" aria-live="polite"></div>
-      </div>
+      <div class="pane"><div class="pane-head"><span>Input — raw OCR</span></div><textarea id="input" class="script-text" spellcheck="false" placeholder="Paste OCR output here…"></textarea></div>
+      <div class="pane"><div class="pane-head"><span>Output — clean Unicode</span><button class="copy-btn" id="copy-btn" type="button">Copy</button></div><div id="output" class="script-text output" aria-live="polite"></div></div>
     </div>
-
     <div class="report" id="report"></div>
   </section>
 
-  <!-- How it works -->
   <section class="how" id="how">
-    <div class="section-head">
-      <h2>How it works</h2>
-      <p>scriptfix is a post-processor, not an OCR engine. Tesseract turns the image into characters; scriptfix applies the linguistic rules Tesseract can't.</p>
-    </div>
+    <div class="section-head"><h2>How it works</h2><p>gurmukhifix is a post-processor, not an OCR engine. Tesseract turns the image into characters; gurmukhifix applies the linguistic rules Tesseract can't.</p></div>
     <div class="pipeline">
-      <div class="step"><span class="step-n">1</span><h3>Image → Tesseract</h3><p>Run Tesseract with JSON output. It returns characters, confidence and bounding boxes.</p></div>
+      <div class="step"><span class="step-n">1</span><h3>Image → Tesseract</h3><p>Run Tesseract with JSON output: characters, confidence and bounding boxes.</p></div>
       <div class="step-arrow">→</div>
-      <div class="step"><span class="step-n">2</span><h3>Confidence routing</h3><p>≥85% passes through untouched, &lt;60% is flagged for review, the middle band is corrected.</p></div>
+      <div class="step"><span class="step-n">2</span><h3>Confidence routing</h3><p>≥85% passes through, &lt;60% is flagged, the middle band is corrected.</p></div>
       <div class="step-arrow">→</div>
-      <div class="step"><span class="step-n">3</span><h3>Evidence-gated repair</h3><p>A fix is applied only if it <em>lowers</em> script-validity badness — so correct text is never changed.</p></div>
+      <div class="step"><span class="step-n">3</span><h3>Evidence-gated repair</h3><p>A fix is applied only if it <em>lowers</em> script-validity badness — correct text is never changed.</p></div>
       <div class="step-arrow">→</div>
       <div class="step"><span class="step-n">4</span><h3>Clean Unicode</h3><p>Corrected text, a per-fix report and preserved layout metadata.</p></div>
     </div>
     <div class="feature-grid">
-      <article class="feature"><h3>Sihari reordering</h3><p>The dependent vowel <code class="gur">ਿ</code> is written before its consonant but must be encoded after it. scriptfix moves it back.</p></article>
-      <article class="feature"><h3>Nukta canonicalisation</h3><p>A nukta emitted after a vowel sign (<code class="gur">ਸਾ਼</code>) is reordered to the canonical consonant+nukta+vowel (<code class="gur">ਸ਼ਾ</code>).</p></article>
-      <article class="feature"><h3>Never corrupts good text</h3><p>Corrections require validity evidence. Already-correct Unicode rounds-trips byte-for-byte — enforced by CI.</p></article>
-      <article class="feature"><h3>Validity report</h3><p>Orphaned matras, impossible sequences and out-of-script codepoints are surfaced with severity.</p></article>
+      <article class="feature"><h3>Sihari reordering</h3><p>The dependent vowel <code class="gur">ਿ</code> is written before its consonant but must be encoded after it. gurmukhifix moves it back.</p></article>
+      <article class="feature"><h3>Nukta canonicalisation</h3><p>A nukta after a vowel sign (<code class="gur">ਸਾ਼</code>) is reordered to the canonical consonant+nukta+vowel (<code class="gur">ਸ਼ਾ</code>).</p></article>
+      <article class="feature"><h3>Never corrupts good text</h3><p>Corrections require validity evidence. Already-correct Unicode round-trips byte-for-byte — enforced by CI.</p></article>
+      <article class="feature"><h3>Validity report</h3><p>Orphaned matras, impossible sequences and out-of-script code-points are surfaced with severity.</p></article>
       <article class="feature"><h3>Batch + learning</h3><p>Parallel batch processing and a SQLite store that promotes repeatedly-confirmed corrections.</p></article>
       <article class="feature"><h3>Layout preserved</h3><p>Bounding boxes flow through end-to-end so downstream tools can rebuild the page.</p></article>
     </div>
   </section>
 
-  <!-- Scripts -->
   <section class="scripts" id="scripts">
-    <div class="section-head">
-      <h2>Six scripts, one pipeline</h2>
-      <p>Shared rule engine with per-script YAML rules and inheritance via <code>extends</code>.</p>
-    </div>
+    <div class="section-head"><h2>Six scripts, one pipeline</h2><p>Shared engine, per-script rules with inheritance via <code>extends</code>. Click any script for a plain-English deep-dive.</p></div>
     <div class="script-cards">
-      <div class="script-card"><span class="glyph gur">ੴ</span><h3>Gurmukhi</h3><p>Sihari, nukta &amp; aspirated-pair handling.</p></div>
-      <div class="script-card"><span class="glyph gur">ਪੰ</span><h3>Punjabi</h3><p>Extends Gurmukhi with tippi/bindi nasalisation rules.</p></div>
-      <div class="script-card"><span class="glyph dev">हि</span><h3>Hindi</h3><p>Matra attachment &amp; anusvara/chandrabindu.</p></div>
-      <div class="script-card"><span class="glyph dev">दे</span><h3>Devanagari</h3><p>Script-general base for Marathi, Nepali, Sanskrit.</p></div>
-      <div class="script-card"><span class="glyph">اُ</span><h3>Urdu</h3><p>Nukta placement &amp; hamza-carrier recovery.</p></div>
-      <div class="script-card"><span class="glyph">فا</span><h3>Farsi</h3><p>Yeh/kaf/gaf variants &amp; joining fixes.</p></div>
+        <a class="script-card" href="scripts/gurmukhi.html"><span class="glyph gur">ੴ</span><h3>Gurmukhi</h3><p>The script of Sikh scripture and one of the writing systems for Punjabi.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/punjabi.html"><span class="glyph gur">ਪੰ</span><h3>Punjabi</h3><p>Punjabi written in the Gurmukhi script — it builds on every Gurmukhi rule.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/hindi.html"><span class="glyph dev">हि</span><h3>Hindi</h3><p>Hindi written in the Devanagari script.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/devanagari.html"><span class="glyph dev">दे</span><h3>Devanagari</h3><p>The shared base script behind Hindi, Marathi, Nepali and Sanskrit.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/urdu.html"><span class="glyph ara">اُ</span><h3>Urdu</h3><p>Urdu in the Nasta'liq style — a connected, right-to-left script.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/farsi.html"><span class="glyph ara">فا</span><h3>Farsi</h3><p>Persian (Farsi) — Arabic-script with Persian-specific letters.</p><span class="more">Deep-dive →</span></a>
     </div>
   </section>
 
-  <!-- Install -->
   <section class="install" id="install">
-    <div class="section-head">
-      <h2>Get started</h2>
-      <p>Pure-Python, MIT-licensed. Tesseract is a peer dependency, not a runtime requirement.</p>
-    </div>
+    <div class="section-head"><h2>Get started</h2><p>Pure-Python, MIT-licensed and free for anyone. Tesseract is a peer dependency, not a runtime requirement.</p></div>
     <div class="code-cards">
-      <div class="code-card">
-        <div class="code-head"><span>Install</span><button class="copy-btn" data-copy="pip install scriptfix">Copy</button></div>
-        <pre><code>pip install scriptfix</code></pre>
-      </div>
-      <div class="code-card">
-        <div class="code-head"><span>Run Tesseract → scriptfix</span><button class="copy-btn" data-copy="tesseract page.tif out --oem 1 --psm 6 json
-scriptfix correct --input out.json --lang gurmukhi --output ./results">Copy</button></div>
-        <pre><code>tesseract page.tif out --oem 1 --psm 6 json
-scriptfix correct --input out.json \
-  --lang gurmukhi --output ./results</code></pre>
-      </div>
-      <div class="code-card">
-        <div class="code-head"><span>Batch a folder</span><button class="copy-btn" data-copy="scriptfix batch --input-dir ./pages --lang devanagari --workers 4">Copy</button></div>
-        <pre><code>scriptfix batch --input-dir ./pages \
-  --lang devanagari --workers 4</code></pre>
-      </div>
+      <div class="code-card"><div class="code-head"><span>Install</span><button class="copy-btn" data-copy="pip install gurmukhifix">Copy</button></div><pre><code>pip install gurmukhifix</code></pre></div>
+      <div class="code-card"><div class="code-head"><span>Run Tesseract → gurmukhifix</span><button class="copy-btn" data-copy="tesseract page.tif out --oem 1 --psm 6 json
+gurmukhifix correct --input out.json --lang gurmukhi --output ./results">Copy</button></div><pre><code>tesseract page.tif out --oem 1 --psm 6 json
+gurmukhifix correct --input out.json \
+  --lang gurmukhi --output ./results</code></pre></div>
+      <div class="code-card"><div class="code-head"><span>Batch a folder</span><button class="copy-btn" data-copy="gurmukhifix batch --input-dir ./pages --lang devanagari --workers 4">Copy</button></div><pre><code>gurmukhifix batch --input-dir ./pages \
+  --lang devanagari --workers 4</code></pre></div>
     </div>
   </section>
-
   <footer class="footer">
     <div class="footer-inner">
       <div>
         <span class="brand-mark small">ਸ</span>
-        <strong>scriptfix</strong>
-        <p>OCR post-processing for South Asian &amp; Persian scripts. MIT licensed.</p>
+        <strong>gurmukhifix</strong>
+        <p>OCR post-processing for South Asian &amp; Persian scripts. Free &amp; open source under the MIT licence.</p>
       </div>
       <div class="footer-links">
+        <a href="scripts/">Scripts</a>
+        <a href="blog/">Blog</a>
+        <a href="license.html">Licence</a>
         <a href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://pypi.org/project/scriptfix/" target="_blank" rel="noopener">PyPI</a>
-        <a href="https://github.com/jsdosanj/gurmukhifix/issues" target="_blank" rel="noopener">Issues</a>
+        <a href="https://pypi.org/project/gurmukhifix/" target="_blank" rel="noopener">PyPI</a>
       </div>
     </div>
-    <p class="footer-fine">Built for researchers, archivists and digitisation teams. Demo runs entirely client-side.</p>
+    <p class="footer-fine">Demo runs entirely client-side. Built for researchers, archivists and digitisation teams.</p>
   </footer>
-
-  <script src="assets/scriptfix.js"></script>
+  <script src="assets/gurmukhifix.js"></script>
   <script src="assets/app.js"></script>
 </body>
 </html>

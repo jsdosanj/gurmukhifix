@@ -1,9 +1,9 @@
-/* app.js — UI wiring for the scriptfix demo. SPDX-License-Identifier: MIT */
+/* app.js — UI wiring for the gurmukhifix demo. SPDX-License-Identifier: MIT */
 (function () {
   "use strict";
 
   const $ = (id) => document.getElementById(id);
-  const SF = window.ScriptFix;
+  const SF = window.GurmukhiFix;
 
   // Example inputs per script: a few "messy OCR" strings plus a clean one.
   const EXAMPLES = {
@@ -174,7 +174,7 @@
         });
         $("input").value = (data.text || "").trim();
         run();
-        status.textContent = "Done — cleaned by scriptfix below.";
+        status.textContent = "Done — cleaned by gurmukhifix below.";
       } catch (e) {
         status.textContent = "OCR failed: " + e.message;
       } finally {
@@ -185,6 +185,9 @@
 
   // ── Boot ───────────────────────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", () => {
+    // Preselect a script from ?script= (used by the per-script pages).
+    const wanted = new URLSearchParams(location.search).get("script");
+    if (wanted && SF.SCRIPTS[wanted]) currentScript = wanted;
     initSelector();
     renderExamples();
     initCopy();

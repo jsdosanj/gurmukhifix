@@ -1,7 +1,7 @@
 """Full-pipeline accuracy regression tests.
 
 These are the tests that the original confusion-pair engine could never pass:
-they assert that scriptfix, run end-to-end via ``process_document``, never makes
+they assert that gurmukhifix, run end-to-end via ``process_document``, never makes
 text *worse* than the raw Tesseract output, and that it leaves already-correct
 text byte-for-byte unchanged. Type/plumbing assertions elsewhere in the suite do
 not catch a corrupting corrector — these do.
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from scriptfix.integration import process_document
+from gurmukhifix.integration import process_document
 from tests.benchmark import GROUND_TRUTH, character_error_rate, run_benchmark
 
 
@@ -59,7 +59,7 @@ class TestNoCorruption:
             _correct(entry["language"], entry["ocr"]), entry["truth"]
         )
         assert corrected <= baseline + 1e-9, (
-            f"{entry['language']}: scriptfix raised CER from {baseline:.4f} to "
+            f"{entry['language']}: gurmukhifix raised CER from {baseline:.4f} to "
             f"{corrected:.4f} on {entry['ocr']!r}"
         )
 
@@ -90,4 +90,4 @@ class TestBenchmarkGate:
             for lang, m in summary.items()
             if m["corrected_cer"] > m["baseline_cer"] + 1e-9
         }
-        assert not regressed, f"scriptfix regressed CER for: {sorted(regressed)}"
+        assert not regressed, f"gurmukhifix regressed CER for: {sorted(regressed)}"

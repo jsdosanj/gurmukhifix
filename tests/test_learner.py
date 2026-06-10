@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from scriptfix.learner import CorrectionStore
+from gurmukhifix.learner import CorrectionStore
 
 
 class TestCorrectionStore:

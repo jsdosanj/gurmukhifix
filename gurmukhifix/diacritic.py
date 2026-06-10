@@ -1,4 +1,4 @@
-"""Diacritic and Nukta Recovery for scriptfix.
+"""Diacritic and Nukta Recovery for gurmukhifix.
 
 Runs after the initial correction pass to recover dropped or misplaced
 diacritics using context-based heuristics and, when provided, text and

@@ -1,4 +1,4 @@
-"""Integration Layer for scriptfix.
+"""Integration Layer for gurmukhifix.
 
 Accepts Tesseract JSON/hOCR output, applies all correction passes,
 and produces the four output artifacts:
@@ -171,7 +171,7 @@ class DocumentProcessor:
 
             # Safety net: the corrected word must never be *less* well-formed than
             # the raw OCR. If the combined passes regressed validity, discard them
-            # and keep the original — scriptfix must not make Tesseract worse.
+            # and keep the original — gurmukhifix must not make Tesseract worse.
             if text != original_text and self._validator.badness(text) > original_badness:
                 text = original_text
                 corrections_for_word = []

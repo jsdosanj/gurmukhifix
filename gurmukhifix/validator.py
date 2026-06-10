@@ -1,4 +1,4 @@
-"""Script Integrity Validator for scriptfix.
+"""Script Integrity Validator for gurmukhifix.
 
 Validates OCR output against script grammar rules defined in YAML configs.
 Flags violations with severity levels: REJECT, WARN, REVIEW.

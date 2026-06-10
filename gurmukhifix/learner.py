@@ -1,4 +1,4 @@
-"""Learning and Adaptation Layer for scriptfix.
+"""Learning and Adaptation Layer for gurmukhifix.
 
 Stores confirmed manual corrections in SQLite and promotes high-confidence
 patterns to the primary confusion dictionary via Bayesian confidence updates.
