@@ -22,7 +22,9 @@ class TestLigatureHandler:
         assert isinstance(corrections, list)
 
     def test_rtl_join_repair_urdu(self) -> None:
-        handler = LigatureHandler("urdu")
+        # RTL space-join repair is opt-in (it cannot otherwise tell a broken
+        # glyph from a real word boundary); enable it explicitly here.
+        handler = LigatureHandler("urdu", rtl_join_repair=True)
         # Arabic letters that should join: ب + ه → به
         broken = "ب ه"
         result, corrections = handler.reassemble(broken)
@@ -35,7 +37,7 @@ class TestLigatureHandler:
         assert corrections[0]["rule"] == "rtl_join_repair"
 
     def test_rtl_join_repair_farsi(self) -> None:
-        handler = LigatureHandler("farsi")
+        handler = LigatureHandler("farsi", rtl_join_repair=True)
         broken = "ک ه"
         result, corrections = handler.reassemble(broken)
         # Should rejoin dual-joining letters and emit a correction record

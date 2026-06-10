@@ -35,28 +35,43 @@ class TesseractOutput:
 
     @classmethod
     def from_file(cls, path: Path | str) -> "TesseractOutput":
-        with Path(path).open(encoding="utf-8") as fh:
-            data = json.load(fh)
+        try:
+            with Path(path).open(encoding="utf-8") as fh:
+                data = json.load(fh)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"{path}: not valid JSON ({exc})") from exc
         return cls(data)
 
     @classmethod
     def from_string(cls, text: str) -> "TesseractOutput":
-        return cls(json.loads(text))
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"input is not valid JSON ({exc})") from exc
+        return cls(data)
 
     @staticmethod
     def _extract_words(data: dict[str, Any]) -> list[dict[str, Any]]:
         """Extract a flat list of word records from various Tesseract JSON formats."""
+        if not isinstance(data, dict):
+            raise ValueError(
+                f"Tesseract output must be a JSON object, got {type(data).__name__}"
+            )
+
         words: list[dict[str, Any]] = []
 
         # Format 1: {"words": [{text, conf, bbox, alternatives}, ...]}
         if "words" in data:
-            return data["words"]
+            if not isinstance(data["words"], list):
+                raise ValueError("'words' must be a list of word objects")
+            return [w for w in data["words"] if isinstance(w, dict)]
 
         # Format 2: {"pages": [{"words": [...]}]}
         if "pages" in data:
-            for page in data["pages"]:
+            for page in data.get("pages", []):
                 for word in page.get("words", []):
-                    words.append(word)
+                    if isinstance(word, dict):
+                        words.append(word)
             return words
 
         # Format 3: flat keys — treat whole JSON as one word
@@ -138,6 +153,8 @@ class DocumentProcessor:
                 continue
 
             # --- Full correction pipeline (60–85% confidence band) ---
+            original_text = text
+            original_badness = self._validator.badness(text)
             corrections_for_word: list[dict[str, Any]] = []
 
             # Step 1: character correction
@@ -152,6 +169,13 @@ class DocumentProcessor:
             text, c = self._diacritic.recover(text, alternatives)
             corrections_for_word.extend(c)
 
+            # Safety net: the corrected word must never be *less* well-formed than
+            # the raw OCR. If the combined passes regressed validity, discard them
+            # and keep the original — scriptfix must not make Tesseract worse.
+            if text != original_text and self._validator.badness(text) > original_badness:
+                text = original_text
+                corrections_for_word = []
+
             # Step 4: validation
             violations = self._validator.validate(text)
             all_violations.extend(violations)
@@ -164,10 +188,16 @@ class DocumentProcessor:
             all_corrections.extend(corrections_for_word)
 
             corrected_words.append(text)
+            # A residual REJECT means the word is still structurally impossible
+            # after correction — surface it for manual review.
+            has_rejections = self._validator.has_rejections(violations)
             region_meta["status"] = "corrected"
             region_meta["corrected"] = text
             region_meta["num_corrections"] = len(corrections_for_word)
             region_meta["violations"] = violations
+            region_meta["has_rejections"] = has_rejections
+            if has_rejections:
+                flagged.append(region_meta)
             metadata_regions.append(region_meta)
 
         elapsed = time.perf_counter() - start
@@ -230,22 +260,16 @@ def process_document(
     Returns:
         Result dict (see DocumentProcessor.process).
     """
-    if isinstance(tess_json, (str, Path)):
-        path = Path(tess_json)
-        # Only attempt path resolution for short strings that could be file paths
-        is_file = False
-        try:
-            is_file = path.exists()
-        except OSError:
-            # Path.exists() raises OSError when the string is too long to be a
-            # valid filesystem path (e.g. when tess_json is a raw JSON string).
-            # In that case, treat the input as a JSON string rather than a path.
-            pass
-
-        if is_file:
-            tess_output = TesseractOutput.from_file(path)
+    if isinstance(tess_json, Path):
+        tess_output = TesseractOutput.from_file(tess_json)
+    elif isinstance(tess_json, str):
+        # A leading '{' or '[' unambiguously marks raw JSON; otherwise treat the
+        # string as a filesystem path. This avoids the fragile reliance on
+        # Path.exists() raising OSError for long JSON strings.
+        if tess_json.lstrip()[:1] in ("{", "["):
+            tess_output = TesseractOutput.from_string(tess_json)
         else:
-            tess_output = TesseractOutput.from_string(str(tess_json))
+            tess_output = TesseractOutput.from_file(tess_json)
     else:
         tess_output = TesseractOutput(tess_json)
 
