@@ -8,24 +8,12 @@ confidence information from Tesseract's alternatives array.
 from __future__ import annotations
 
 import unicodedata
-from pathlib import Path
 from typing import Any
 
 import regex
-import yaml
 
+from .config import load_config as _load_config
 from .validator import ScriptValidator
-
-
-_CONFIG_DIR = Path(__file__).parent / "configs"
-
-
-def _load_config(language: str) -> dict[str, Any]:
-    path = _CONFIG_DIR / f"{language}.yaml"
-    if not path.exists():
-        raise FileNotFoundError(f"No config found for language '{language}' at {path}")
-    with path.open(encoding="utf-8") as fh:
-        return yaml.safe_load(fh)
 
 
 class DiacriticRecovery:
@@ -60,6 +48,8 @@ class DiacriticRecovery:
 
         if self.language in ("gurmukhi", "punjabi"):
             text, c = self._recover_sihari_order(text)
+            corrections.extend(c)
+            text, c = self._fix_nukta_order(text)
             corrections.extend(c)
 
         if self.language in ("urdu", "farsi"):
@@ -132,6 +122,39 @@ class DiacriticRecovery:
                 i += 1
 
         return "".join(result), corrections
+
+    # Gurmukhi dependent vowel signs (matras), including sihari.
+    _GURMUKHI_MATRAS = frozenset(
+        "ਾਿੀੁੂੇੈੋੌ"
+    )
+
+    def _fix_nukta_order(self, text: str) -> tuple[str, list[dict[str, Any]]]:
+        """Put a nukta (U+0A3C) before the dependent vowel on the same consonant.
+
+        The canonical Gurmukhi order is consonant + nukta + vowel sign (e.g. ਸ਼ਾ),
+        but OCR sometimes emits the vowel before the nukta (ਸਾ਼). Unicode NFC does
+        not reorder these (the vowel sign has combining class 0 and blocks
+        reordering), so we swap an adjacent ``matra + nukta`` pair into
+        ``nukta + matra``. The recover() safety net guards against any pair whose
+        swap would lower validity.
+        """
+        corrections: list[dict[str, Any]] = []
+        nukta = "਼"
+        chars = list(text)
+        i = 1
+        while i < len(chars):
+            if chars[i] == nukta and chars[i - 1] in self._GURMUKHI_MATRAS:
+                chars[i - 1], chars[i] = chars[i], chars[i - 1]
+                corrections.append(
+                    {
+                        "original": chars[i] + chars[i - 1],
+                        "corrected": chars[i - 1] + chars[i],
+                        "rule": "nukta_order_fix",
+                        "position": i - 1,
+                    }
+                )
+            i += 1
+        return "".join(chars), corrections
 
     def _recover_hamza_carrier(self, text: str) -> tuple[str, list[dict[str, Any]]]:
         """Ensure standalone hamza (U+0621) has an appropriate carrier in context."""

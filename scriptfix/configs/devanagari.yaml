@@ -1,0 +1,28 @@
+# Devanagari OCR Correction Rules
+# SPDX-License-Identifier: MIT
+# Script: Devanagari (देवनागरी)
+#
+# Devanagari is shared by Hindi, Marathi, Nepali, Sanskrit and others. This
+# config inherits the full Hindi rule set via `extends` and adds rules that are
+# general to the Devanagari script (not Hindi-specific). Use --lang devanagari
+# for mixed or non-Hindi Devanagari material; use --lang hindi for Hindi text.
+
+script: devanagari
+unicode_block: [0x0900, 0x097F]
+normalization: NFC
+extends: hindi
+
+# Script-general Devanagari additions (merged on top of the inherited Hindi rules).
+confusion_pairs:
+  # Avagraha is frequently misread as a danda or stray mark in Sanskrit text.
+  - wrong: "ऽ"
+    correct: ""
+    note: "spurious avagraha from speckle/mark misrecognition"
+
+diacritic_pairs:
+  - wrong: "॒"
+    correct: ""
+    note: "spurious Vedic anudatta accent mark"
+  - wrong: "॑"
+    correct: ""
+    note: "spurious Vedic udatta accent mark"

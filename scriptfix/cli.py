@@ -21,7 +21,7 @@ import click
 from .integration import process_document
 from .learner import CorrectionStore
 
-SUPPORTED_LANGUAGES = ["gurmukhi", "punjabi", "hindi", "urdu", "farsi"]
+SUPPORTED_LANGUAGES = ["gurmukhi", "punjabi", "hindi", "devanagari", "urdu", "farsi"]
 
 
 @click.group()

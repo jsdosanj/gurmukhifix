@@ -7,13 +7,11 @@ Flags violations with severity levels: REJECT, WARN, REVIEW.
 from __future__ import annotations
 
 import unicodedata
-from pathlib import Path
 from typing import Any
 
 import regex
-import yaml
 
-_CONFIG_DIR = Path(__file__).parent / "configs"
+from .config import load_config as _load_config
 
 SEVERITY_REJECT = "REJECT"
 SEVERITY_WARN = "WARN"
@@ -27,14 +25,6 @@ SEVERITY_WEIGHTS = {
     SEVERITY_WARN: 10.0,
     SEVERITY_REVIEW: 1.0,
 }
-
-
-def _load_config(language: str) -> dict[str, Any]:
-    path = _CONFIG_DIR / f"{language}.yaml"
-    if not path.exists():
-        raise FileNotFoundError(f"No config found for language '{language}' at {path}")
-    with path.open(encoding="utf-8") as fh:
-        return yaml.safe_load(fh)
 
 
 class ScriptValidator:
@@ -140,7 +130,7 @@ class ScriptValidator:
                         }
                     )
 
-        elif self.language == "hindi":
+        elif self.language in ("hindi", "devanagari", "marathi", "nepali", "sanskrit"):
             # Devanagari matras: U+093E–U+094C
             matra_range = regex.compile(r"[\u093E-\u094C]")
             consonant_range = regex.compile(r"[\u0915-\u0939\u0958-\u095F]")

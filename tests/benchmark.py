@@ -84,6 +84,10 @@ GROUND_TRUTH: list[dict[str, Any]] = [
     {"language": "gurmukhi", "ocr": "ਿਦਨ ਰਾਤ", "truth": "ਦਿਨ ਰਾਤ"},
     {"language": "punjabi", "ocr": "ਿਕਸਾਨ ਵਰਗ", "truth": "ਕਿਸਾਨ ਵਰਗ"},
     {"language": "punjabi", "ocr": "ਿਦਲ ਦੀ", "truth": "ਦਿਲ ਦੀ"},
+    # Nukta emitted *after* the vowel sign instead of before it (canonical order
+    # is consonant + nukta + vowel). scriptfix reorders it.
+    {"language": "gurmukhi", "ocr": "ਖਾ਼ਸ ਗੱਲ", "truth": "ਖ਼ਾਸ ਗੱਲ"},
+    {"language": "punjabi", "ocr": "ਭਾਸਾ਼ ਬੋਲੀ", "truth": "ਭਾਸ਼ਾ ਬੋਲੀ"},
 ]
 
 
