@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Farsi OCR correction — gurmukhifix</title>
+  <meta name="description" content="How gurmukhifix cleans Tesseract OCR for Farsi into well-formed Unicode, and why it beats Tesseract alone." />
+  <link rel="canonical" href="https://jsdosanj.github.io/gurmukhifix/scripts/farsi.html" />
+  <meta property="og:title" content="Farsi OCR correction — gurmukhifix" />
+  <meta property="og:description" content="How gurmukhifix cleans Tesseract OCR for Farsi into well-formed Unicode, and why it beats Tesseract alone." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0a0b14" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="bg-aurora" aria-hidden="true"></div>
+  <header class="nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">ਸ</span>
+      <span class="brand-name">gurmukhifix</span>
+    </a>
+    <nav class="nav-links">
+        <a href="../index.html#demo">Demo</a>
+        <a href="../scripts/" class="here">Scripts</a>
+        <a href="../blog/">Blog</a>
+        <a href="../index.html#install">Install</a>
+        <a href="../license.html">License</a>
+        <a class="nav-cta" href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <section class="doc-hero">
+    <div class="doc-wrap">
+      <a class="back" href="../scripts/">← All scripts</a>
+      <div class="doc-title"><span class="doc-glyph ara">فا</span>
+        <div><h1>Farsi <span class="native ara">فارسی</span></h1><p>Persian (Farsi) — Arabic-script with Persian-specific letters.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <div class="doc-wrap">
+      <h2>Where it's used</h2>
+      <p class="lead">Persian was the court and administrative language across much of north-west India for centuries. Its records mix Persian letters that OCR often maps to the wrong Arabic forms. Available through the Python package.</p>
+    </div>
+  </section>
+
+  <section class="doc-section alt">
+    <div class="doc-wrap">
+      <h2>What Tesseract gets wrong</h2>
+      <div class="problem-grid">
+        <article class="problem"><h3>Yeh variants</h3><p>Persian ye (ی) is frequently encoded as Arabic yaa (ي) or alef maqsura (ى), breaking search.</p></article>
+        <article class="problem"><h3>Kaf / gaf confusion</h3><p>ک and گ differ by a small stroke and are routinely swapped.</p></article>
+        <article class="problem"><h3>Persian letters read as Arabic</h3><p>پ چ ژ گ are often misread as their nukta-less Arabic equivalents.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <div class="doc-wrap">
+      <h2>How gurmukhifix fixes it</h2>
+      <ul class="fix-list">
+          <li>Canonicalises yeh and kaf/gaf variants to their Persian forms.</li>
+          <li>Restores Persian-specific letters (پ چ ژ گ).</li>
+          <li>Optional, evidence-aware joining repair for broken glyphs.</li>
+          <li>Normalises to NFC.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="doc-section alt">
+    <div class="doc-wrap">
+      <h2>Examples</h2>
+      <table class="ex-table">
+        <thead><tr><th>Raw OCR</th><th>gurmukhifix</th><th>What happened</th></tr></thead>
+        <tbody>
+          <tr><td><code class="ara">زبان فارسی</code></td><td><code class="ara good">زبان فارسی</code></td><td>Valid — passes through</td></tr>
+          <tr><td><code class="ara">کتاب مطالعه</code></td><td><code class="ara good">کتاب مطالعه</code></td><td>Valid — untouched</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <div class="doc-wrap">
+      <h2>Why this beats the alternatives</h2>
+      <div class="beat-grid">
+        <div class="beat"><h3>vs. Tesseract alone</h3><p>Tesseract turns pixels into characters. It has <em>no</em> linguistic knowledge — it can't know that a dependent vowel may not begin a word, or that a sign written to the left of a letter must be encoded after it. gurmukhifix adds exactly those rules.</p></div>
+        <div class="beat"><h3>vs. find-and-replace / spellcheck</h3><p>A blind substitution table rewrites correct letters too and corrupts good text. gurmukhifix is <strong>evidence-gated</strong>: a fix is applied only when it makes the text more valid, so already-correct Unicode is never changed.</p></div>
+        <div class="beat"><h3>vs. doing nothing</h3><p>Raw OCR often <em>looks</em> right but is malformed Unicode — wrong code-point order, dropped marks. That silently breaks search, indexing, fonts and copy-paste. gurmukhifix produces canonical, well-formed text.</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="doc-cta"><div class="doc-wrap"><a class="btn btn-primary" href="https://pypi.org/project/gurmukhifix/" target="_blank" rel="noopener">Use via the Python package →</a></div></section>
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <span class="brand-mark small">ਸ</span>
+        <strong>gurmukhifix</strong>
+        <p>OCR post-processing for South Asian &amp; Persian scripts. Free &amp; open source under the MIT licence.</p>
+      </div>
+      <div class="footer-links">
+        <a href="../scripts/">Scripts</a>
+        <a href="../blog/">Blog</a>
+        <a href="../license.html">Licence</a>
+        <a href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://pypi.org/project/gurmukhifix/" target="_blank" rel="noopener">PyPI</a>
+      </div>
+    </div>
+    <p class="footer-fine">Demo runs entirely client-side. Built for researchers, archivists and digitisation teams.</p>
+  </footer>
+</body>
+</html>

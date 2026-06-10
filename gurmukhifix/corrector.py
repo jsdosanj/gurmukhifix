@@ -1,4 +1,4 @@
-"""Character Correction Engine for scriptfix.
+"""Character Correction Engine for gurmukhifix.
 
 Loads per-script correction rules from YAML config files and applies
 character-level confusion and diacritic substitutions to Tesseract OCR
@@ -6,7 +6,7 @@ output.
 
 Corrections are **evidence-gated**: a confusion/diacritic substitution is only
 applied when it strictly lowers the script-validity "badness" of the
-surrounding word (see :class:`scriptfix.validator.ScriptValidator`). Well-formed
+surrounding word (see :class:`gurmukhifix.validator.ScriptValidator`). Well-formed
 text scores zero badness, so it is never modified — this is what stops the blind
 bidirectional find-replace that would otherwise corrupt correct OCR output.
 Substitutions between two individually-valid characters (e.g. an aspirated-pair

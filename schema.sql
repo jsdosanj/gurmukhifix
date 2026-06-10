@@ -1,4 +1,4 @@
--- Schema for scriptfix corrections database
+-- Schema for gurmukhifix corrections database
 -- SPDX-License-Identifier: MIT
 
 CREATE TABLE IF NOT EXISTS corrections (

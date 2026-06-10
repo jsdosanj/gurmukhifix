@@ -1,4 +1,4 @@
-# gurmukhifix / scriptfix
+# gurmukhifix / gurmukhifix
 
 > Tesseract OCR post-processing engine for handwritten South Asian and Persian scripts.
 > Corrects character misrecognition, ligature errors, and diacritic placement for
@@ -9,7 +9,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 
 ```
-Image  →  Tesseract (JSON)  →  scriptfix  →  Corrected Text
+Image  →  Tesseract (JSON)  →  gurmukhifix  →  Corrected Text
                                    │
                     ┌──────────────┼──────────────┐
                     │              │              │
@@ -38,7 +38,7 @@ exceed 30–40%. The failure modes are systematic and predictable:
 These are connected scripts with extensive diacritic systems and ligature rules.
 Historical orthography variation in manuscript material makes the problem harder
 than printed-text OCR. No open post-processing layer existed for all five scripts
-combined. **scriptfix** addresses that gap.
+combined. **gurmukhifix** addresses that gap.
 
 ---
 
@@ -51,7 +51,7 @@ Python is the implementation language because:
 - Python's Unicode support (`unicodedata`, `regex`) is mature enough for
   codepoint-level manipulation across all five Unicode blocks.
 - **pytesseract** and other Tesseract Python wrappers already use Python;
-  scriptfix integrates naturally into existing pipelines.
+  gurmukhifix integrates naturally into existing pipelines.
 - The target users — researchers, archivists, digitization staff — are far more
   likely to run a `pip install` than to compile a Go or Rust binary.
 
@@ -68,32 +68,32 @@ dependent vowel cannot appear at the start of a word, or that a Gurmukhi
 sihari must follow its base consonant in Unicode order even though it appears
 before it visually.
 
-**scriptfix** applies those rules after the fact. Neither tool replaces the
+**gurmukhifix** applies those rules after the fact. Neither tool replaces the
 other:
 
 ```
 ┌───────────┐     ┌─────────────────────┐     ┌──────────────────┐
-│  Document │     │  Tesseract OCR       │     │  scriptfix       │
+│  Document │     │  Tesseract OCR       │     │  gurmukhifix       │
 │  Image    │────▶│  (image → chars,    │────▶│  (chars →        │
 │           │     │   JSON output)       │     │   corrected text)│
 └───────────┘     └─────────────────────┘     └──────────────────┘
 ```
 
 Tesseract is run with `--oem 1 --psm 6` (or appropriate PSM for your document
-layout) and `--output-type json`. scriptfix reads that JSON directly.
+layout) and `--output-type json`. gurmukhifix reads that JSON directly.
 
 ---
 
 ## Installation
 
-Install from [PyPI](https://pypi.org/project/scriptfix/):
+Install from [PyPI](https://pypi.org/project/gurmukhifix/):
 
 ```bash
-pip install scriptfix
+pip install gurmukhifix
 ```
 
-> **Note:** The PyPI package name is **`scriptfix`**, not `gurmukhifix`.
-> The repository is named `gurmukhifix`, but the installable package is `scriptfix`.
+> The repository, the importable Python package, and the PyPI distribution all
+> share one name: **`gurmukhifix`**.
 
 You can also install directly from GitHub to get the latest development version:
 
@@ -105,12 +105,12 @@ pip install git+https://github.com/jsdosanj/gurmukhifix.git
 
 - Python 3.10 or later
 - No system OCR libraries required (Tesseract is a peer dependency, not a
-  runtime dependency of scriptfix)
+  runtime dependency of gurmukhifix)
 
 ### Optional NLP extras
 
 ```bash
-pip install "scriptfix[nlp]"
+pip install "gurmukhifix[nlp]"
 ```
 
 This adds `scikit-learn` for contextual classifiers.
@@ -124,7 +124,7 @@ This adds `scikit-learn` for contextual classifiers.
 tesseract my_gurmukhi_page.tif output_tess --oem 1 --psm 6 json
 
 # 2. Correct the Tesseract output
-scriptfix correct --input output_tess.json --lang gurmukhi --output ./results
+gurmukhifix correct --input output_tess.json --lang gurmukhi --output ./results
 
 # 3. Inspect the outputs
 cat ./results/corrected_text.txt
@@ -135,11 +135,11 @@ cat ./results/metadata.json
 All five languages:
 
 ```bash
-scriptfix correct --input page.json --lang gurmukhi   --output ./out/gurmukhi
-scriptfix correct --input page.json --lang punjabi    --output ./out/punjabi
-scriptfix correct --input page.json --lang hindi      --output ./out/hindi
-scriptfix correct --input page.json --lang urdu       --output ./out/urdu
-scriptfix correct --input page.json --lang farsi      --output ./out/farsi
+gurmukhifix correct --input page.json --lang gurmukhi   --output ./out/gurmukhi
+gurmukhifix correct --input page.json --lang punjabi    --output ./out/punjabi
+gurmukhifix correct --input page.json --lang hindi      --output ./out/hindi
+gurmukhifix correct --input page.json --lang urdu       --output ./out/urdu
+gurmukhifix correct --input page.json --lang farsi      --output ./out/farsi
 ```
 
 ---
@@ -147,7 +147,7 @@ scriptfix correct --input page.json --lang farsi      --output ./out/farsi
 ## Batch processing
 
 ```bash
-scriptfix batch \
+gurmukhifix batch \
   --input-dir ./pages \
   --lang urdu \
   --output-dir ./results \
@@ -165,19 +165,19 @@ attempting automatic correction.
 
 ### Per-corpus tuning
 
-scriptfix stores confirmed corrections in a SQLite database (`corrections.db`).
+gurmukhifix stores confirmed corrections in a SQLite database (`corrections.db`).
 When a correction pattern is confirmed 10 or more times, it is automatically
 promoted to the primary confusion dictionary for that script.
 
 ```bash
 # Review flagged regions and add corrections to the database
 # (flagged.json is written alongside the other artifacts by 'correct' and 'batch')
-scriptfix review \
+gurmukhifix review \
   --flagged ./results/flagged.json \
   --corrections ./my_corpus/corrections.db
 
 # Generate a report of accumulated corrections
-scriptfix report \
+gurmukhifix report \
   --corrections ./my_corpus/corrections.db \
   --lang gurmukhi
 ```
@@ -188,10 +188,10 @@ To build a correction profile specific to, say, 19th-century Punjabi manuscripts
 
 1. Point `--corrections` at a corpus-specific database path.
 2. Process all pages in your archive.
-3. Review flagged regions using `scriptfix review`.
+3. Review flagged regions using `gurmukhifix review`.
 4. After 10+ confirmations per pattern, promoted pairs appear in the report.
 5. Export the report and add promoted pairs to a custom YAML config by copying
-   `scriptfix/configs/punjabi.yaml` and appending the promoted pairs to `confusion_pairs`.
+   `gurmukhifix/configs/punjabi.yaml` and appending the promoted pairs to `confusion_pairs`.
 
 ---
 
@@ -199,12 +199,12 @@ To build a correction profile specific to, say, 19th-century Punjabi manuscripts
 
 ### Adding new language rules
 
-Most high-level correction rules live in `scriptfix/configs/{language}.yaml`. Some
+Most high-level correction rules live in `gurmukhifix/configs/{language}.yaml`. Some
 low-level script-specific handling (for example, ligature, diacritic, and
 validator behaviour) is implemented in Python modules. To add or update rules:
 
 1. Fork the repository.
-2. Edit the relevant `scriptfix/configs/{language}.yaml`.
+2. Edit the relevant `gurmukhifix/configs/{language}.yaml`.
 3. Add a test case in `tests/test_corrector.py` that exercises the new rule.
 4. Run `pytest tests/` — all tests must pass.
 5. Submit a pull request.
@@ -217,7 +217,7 @@ the bug. Place these in the appropriate `tests/test_*.py` file.
 ### Submitting corrections to the community database
 
 If you have manually verified correction pairs for a specific corpus, you can
-submit them as a pull request to `scriptfix/configs/{language}.yaml`. Each pair must
+submit them as a pull request to `gurmukhifix/configs/{language}.yaml`. Each pair must
 include a `note` field explaining the confusion and, where possible, a reference
 to the source corpus or academic work.
 
@@ -231,7 +231,7 @@ data and a maintainer will add it to the default config after review.
 
 ## Output artifacts
 
-Each `scriptfix correct` or `scriptfix batch` run produces three files:
+Each `gurmukhifix correct` or `gurmukhifix batch` run produces three files:
 
 | File | Contents |
 |------|----------|
@@ -257,7 +257,7 @@ reconstruct document layout from the output.
 ## Repository structure
 
 ```
-scriptfix/
+gurmukhifix/
   configs/
     gurmukhi.yaml     ← Gurmukhi confusion pairs and rules
     punjabi.yaml      ← Punjabi-specific rules
@@ -304,9 +304,20 @@ python -m tests.benchmark
 
 ---
 
+## Releasing
+
+`gurmukhifix` publishes to PyPI from a GitHub Release via Trusted Publishing —
+no stored tokens. See **[PUBLISHING.md](PUBLISHING.md)** for the full
+step-by-step (one-time setup plus the per-release checklist).
+
+---
+
 ## License
 
 SPDX-License-Identifier: MIT
+
+gurmukhifix is **free and open source under the MIT license** — anyone may use
+it for any purpose, including commercial, at no cost. See [LICENSE](LICENSE).
 
 This project is released under the [MIT License](LICENSE).
 

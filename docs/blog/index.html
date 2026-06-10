@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Why we built gurmukhifix — gurmukhifix blog</title>
+  <meta name="description" content="Digitising thousands of north-west Indian manuscripts (1400s–today) exposed systematic, invisible OCR errors. Here's why Tesseract alone wasn't enough — and how evidence-gated correction fixed it." />
+  <link rel="canonical" href="https://jsdosanj.github.io/gurmukhifix/blog/" />
+  <meta property="og:title" content="Why we built gurmukhifix — gurmukhifix blog" />
+  <meta property="og:description" content="Digitising thousands of north-west Indian manuscripts (1400s–today) exposed systematic, invisible OCR errors. Here's why Tesseract alone wasn't enough — and how evidence-gated correction fixed it." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0a0b14" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="bg-aurora" aria-hidden="true"></div>
+  <header class="nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">ਸ</span>
+      <span class="brand-name">gurmukhifix</span>
+    </a>
+    <nav class="nav-links">
+        <a href="../index.html#demo">Demo</a>
+        <a href="../scripts/">Scripts</a>
+        <a href="../blog/" class="here">Blog</a>
+        <a href="../index.html#install">Install</a>
+        <a href="../license.html">License</a>
+        <a class="nav-cta" href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </header>
+
+  <article class="post">
+    <div class="doc-wrap">
+      <a class="back" href="../index.html">← Home</a>
+      <p class="post-kicker">Field notes</p>
+      <h1>Why we built gurmukhifix: 600 years of manuscripts vs. one stubborn OCR problem</h1>
+      <p class="post-meta">On digitising north-west India's written heritage — and why Tesseract alone wasn't enough.</p>
+
+      <p class="lead">It started with a pile of scans. Thousands of them: handwritten manuscripts, ledgers and printed pages from north-west India spanning roughly the 1400s to the present day. Gurmukhi scripture and Punjabi correspondence. Persian and Urdu administrative records. Hindi and Devanagari texts. The goal was simple to state and hard to do — turn the images into searchable, reusable digital text.</p>
+
+      <h2>The promise and the wall</h2>
+      <p>Modern OCR feels like magic on clean printed English. So we pointed Tesseract at the collection and waited. What came back looked, at a glance, like text. But when we tried to <em>search</em> it, index it, or paste it into a document, it fell apart.</p>
+      <p>For handwritten Gurmukhi and Urdu, character error rates routinely ran past 30–40%. Worse, the errors weren't random noise — they were <strong>systematic</strong>, and they produced Unicode that was subtly, invisibly broken.</p>
+
+      <h2>The bug you can't see</h2>
+      <p>Take one example that haunted the Gurmukhi pages. The vowel sign <em>sihari</em> (ਿ) is written to the <em>left</em> of the consonant it belongs to — but the Unicode standard says it must be <em>stored after</em> that consonant. Tesseract, faithfully, writes down what it sees: the sihari first. The result renders almost correctly on screen, so it passes the eye test. Then you search for the word and get nothing, because at the byte level it's a different, impossible sequence.</p>
+      <p>Persian and Urdu had their own version of this: a single misplaced or dropped nukta turning ب into پ, or ی silently encoded as ي. Hindi had matras detached from their consonants. Every script had a handful of these — predictable, rule-shaped failures that no amount of re-running Tesseract would fix, because <strong>Tesseract has no idea what the script's rules are</strong>. Its job is pixels to characters. It does not know that a dependent vowel cannot begin a word.</p>
+
+      <h2>Why the obvious fixes didn't work</h2>
+      <p>The tempting first move is a find-and-replace table: "whenever you see X, write Y." We tried versions of that. It was a disaster. A blind substitution rewrites the letters that were <em>already correct</em>, and on a corpus that is mostly correct, that means you corrupt far more than you fix. An early naive pass actually made the text <em>worse</em> than raw Tesseract — by a lot.</p>
+      <p>The other tempting move is "just train a better model." That helps the recognition step, but it's expensive, needs labelled handwriting data we didn't have, and still leaves the structural Unicode problems untouched.</p>
+
+      <h2>The idea: correct only with evidence</h2>
+      <p>What finally worked was a different framing. Don't guess. Only change a character when there's <strong>evidence</strong> that the change makes the text more linguistically valid. If a word is already well-formed, leave it completely alone. If a sihari is sitting where a vowel sign can't legally sit, reorder it — because that move provably resolves a violation. If two letters are genuinely ambiguous and there's no signal which is right, don't flip a coin; flag it for a human.</p>
+      <p>That principle — <em>evidence-gated correction</em> — became gurmukhifix. It sits <em>after</em> Tesseract, reads its JSON output, and applies the script-specific rules Tesseract can't: reorder the sihari, canonicalise the nukta, repair the hamza carrier, normalise to clean NFC Unicode, and surface anything it isn't sure about. Crucially, it is measured against a hard rule in continuous integration: <strong>it must never make a page worse than raw Tesseract.</strong></p>
+
+      <h2>Why all these scripts, together</h2>
+      <p>The archives of north-west India don't come neatly sorted by script. A single shelf might hold Gurmukhi scripture, a Persian land record and an Urdu letter. Existing post-processing tools, where they existed at all, covered one script in isolation. We needed one pipeline that understood Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — sharing an engine, differing only in their rules. That's what gurmukhifix is.</p>
+
+      <h2>The result</h2>
+      <p>On our benchmarks, the corrected output now improves character error rate substantially over raw Tesseract on the error cases, while leaving clean text untouched — and it never regresses. The text that comes out is canonical Unicode you can actually search, index and trust.</p>
+      <p>It is not a replacement for Tesseract, and it can't read handwriting that Tesseract fundamentally couldn't. It is the missing layer between "the OCR ran" and "the text is usable." For anyone trying to make six centuries of a region's writing searchable, that layer turned out to be the whole game.</p>
+
+      <p class="post-cta">gurmukhifix is free and open source under the MIT licence. <a href="../index.html#demo">Try the live demo</a> or <a href="https://pypi.org/project/gurmukhifix/" target="_blank" rel="noopener">pip install gurmukhifix</a>.</p>
+    </div>
+  </article>
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>
+        <span class="brand-mark small">ਸ</span>
+        <strong>gurmukhifix</strong>
+        <p>OCR post-processing for South Asian &amp; Persian scripts. Free &amp; open source under the MIT licence.</p>
+      </div>
+      <div class="footer-links">
+        <a href="../scripts/">Scripts</a>
+        <a href="../blog/">Blog</a>
+        <a href="../license.html">Licence</a>
+        <a href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://pypi.org/project/gurmukhifix/" target="_blank" rel="noopener">PyPI</a>
+      </div>
+    </div>
+    <p class="footer-fine">Demo runs entirely client-side. Built for researchers, archivists and digitisation teams.</p>
+  </footer>
+</body>
+</html>

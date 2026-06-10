@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from scriptfix.integration import DocumentProcessor, TesseractOutput, process_document
+from gurmukhifix.integration import DocumentProcessor, TesseractOutput, process_document
 
 
 # ── Sample Tesseract-style JSON ──────────────────────────────────────────────

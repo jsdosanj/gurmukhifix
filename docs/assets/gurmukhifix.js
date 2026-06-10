@@ -1,5 +1,5 @@
 /*
- * scriptfix.js — a faithful in-browser port of the scriptfix post-processing
+ * gurmukhifix.js — a faithful in-browser port of the gurmukhifix post-processing
  * pipeline for the interactive demo. It mirrors the Python engine's
  * evidence-gated approach: corrections are applied only when they lower the
  * script-validity "badness" of the text, so well-formed Unicode is never
@@ -190,5 +190,5 @@
     return { input: original, output: text, changes, before, after };
   }
 
-  global.ScriptFix = { correct, badness, violations, SCRIPTS };
+  global.GurmukhiFix = { correct, badness, violations, SCRIPTS };
 })(window);

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from scriptfix.config import load_config
-from scriptfix.corrector import CharacterCorrector
-from scriptfix.integration import process_document
+from gurmukhifix.config import load_config
+from gurmukhifix.corrector import CharacterCorrector
+from gurmukhifix.integration import process_document
 
 ALL_LANGUAGES = ["gurmukhi", "punjabi", "hindi", "devanagari", "urdu", "farsi"]
 

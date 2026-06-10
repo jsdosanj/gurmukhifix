@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from scriptfix.cli import cli
+from gurmukhifix.cli import cli
 
 
 SAMPLE_JSON = {
@@ -102,7 +102,7 @@ class TestReportCommand:
         assert result.exit_code != 0
 
     def test_report_with_db(self, runner: CliRunner, tmp_path: Path) -> None:
-        from scriptfix.learner import CorrectionStore
+        from gurmukhifix.learner import CorrectionStore
         db_path = tmp_path / "test.db"
         store = CorrectionStore(db_path)
         store.record_correction(
@@ -181,4 +181,4 @@ class TestCLIGeneral:
     def test_help(self, runner: CliRunner) -> None:
         result = runner.invoke(cli, ["--help"])
         assert result.exit_code == 0
-        assert "scriptfix" in result.output.lower()
+        assert "gurmukhifix" in result.output.lower()

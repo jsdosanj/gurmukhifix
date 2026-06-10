@@ -1,4 +1,4 @@
-"""Centralised config loading for scriptfix.
+"""Centralised config loading for gurmukhifix.
 
 A single loader used by every module so that per-script YAML files can share
 rules through an ``extends:`` key. Previously each module loaded its config

@@ -1,4 +1,4 @@
-"""Ligature and Conjunct Handler for scriptfix.
+"""Ligature and Conjunct Handler for gurmukhifix.
 
 Detects broken ligatures using Unicode block analysis and (optionally)
 positional bounding-box data from Tesseract JSON. Reassembles sequences

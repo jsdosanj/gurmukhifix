@@ -1,10 +1,10 @@
-"""CLI Interface for scriptfix.
+"""CLI Interface for gurmukhifix.
 
 Usage:
-    scriptfix correct --input tesseract_output.json --lang gurmukhi --output ./results
-    scriptfix batch --input-dir ./pages --lang urdu --workers 4
-    scriptfix review --flagged ./results/flagged.json --corrections ./corrections.db
-    scriptfix report --corrections ./corrections.db --lang hindi
+    gurmukhifix correct --input tesseract_output.json --lang gurmukhi --output ./results
+    gurmukhifix batch --input-dir ./pages --lang urdu --workers 4
+    gurmukhifix review --flagged ./results/flagged.json --corrections ./corrections.db
+    gurmukhifix report --corrections ./corrections.db --lang hindi
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ SUPPORTED_LANGUAGES = ["gurmukhi", "punjabi", "hindi", "devanagari", "urdu", "fa
 @click.group()
 @click.version_option()
 def cli() -> None:
-    """scriptfix — Tesseract OCR post-processing for South Asian and Persian scripts."""
+    """gurmukhifix — Tesseract OCR post-processing for South Asian and Persian scripts."""
 
 
 # ---------------------------------------------------------------------------

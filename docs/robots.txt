@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://jsdosanj.github.io/gurmukhifix/sitemap.xml

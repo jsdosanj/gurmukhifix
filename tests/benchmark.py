@@ -1,13 +1,13 @@
-"""Accuracy Benchmark Script for scriptfix.
+"""Accuracy Benchmark Script for gurmukhifix.
 
 Computes Character Error Rate (CER) and Word Error Rate (WER) for each
-supported script, comparing scriptfix-corrected output against ground truth.
+supported script, comparing gurmukhifix-corrected output against ground truth.
 
 Usage:
     python -m tests.benchmark [--ground-truth-dir tests/ground_truth]
 
 Output: A Markdown table with CER/WER for baseline (raw Tesseract) vs
-        scriptfix-corrected output.
+        gurmukhifix-corrected output.
 """
 
 from __future__ import annotations
@@ -77,7 +77,7 @@ GROUND_TRUTH: list[dict[str, Any]] = [
     # ── OCR-error samples ────────────────────────────────────────────────────
     # These contain a real, systematic Tesseract failure that the engine must
     # repair: the sihari (ਿ) is emitted *before* its base consonant (its visual
-    # position) instead of after it (its Unicode order). scriptfix should reorder
+    # position) instead of after it (its Unicode order). gurmukhifix should reorder
     # it, lowering CER below the raw-OCR baseline.
     {"language": "gurmukhi", "ocr": "ਿਸੱਖ ਧਰਮ", "truth": "ਸਿੱਖ ਧਰਮ"},
     {"language": "gurmukhi", "ocr": "ਿਪੰਡ ਵਾਲੇ", "truth": "ਪਿੰਡ ਵਾਲੇ"},
@@ -85,7 +85,7 @@ GROUND_TRUTH: list[dict[str, Any]] = [
     {"language": "punjabi", "ocr": "ਿਕਸਾਨ ਵਰਗ", "truth": "ਕਿਸਾਨ ਵਰਗ"},
     {"language": "punjabi", "ocr": "ਿਦਲ ਦੀ", "truth": "ਦਿਲ ਦੀ"},
     # Nukta emitted *after* the vowel sign instead of before it (canonical order
-    # is consonant + nukta + vowel). scriptfix reorders it.
+    # is consonant + nukta + vowel). gurmukhifix reorders it.
     {"language": "gurmukhi", "ocr": "ਖਾ਼ਸ ਗੱਲ", "truth": "ਖ਼ਾਸ ਗੱਲ"},
     {"language": "punjabi", "ocr": "ਭਾਸਾ਼ ਬੋਲੀ", "truth": "ਭਾਸ਼ਾ ਬੋਲੀ"},
 ]
@@ -143,7 +143,7 @@ def run_benchmark(
         ground_truth: List of {"language", "ocr", "truth"} dicts.
         ground_truth_dir: Directory of JSON files following the same schema.
     """
-    from scriptfix.integration import process_document
+    from gurmukhifix.integration import process_document
 
     if ground_truth is None:
         ground_truth = []
@@ -228,14 +228,14 @@ def print_table(summary: dict[str, Any]) -> None:
 def main() -> int:
     """Run the benchmark and return a process exit code.
 
-    The hard CI gate is **no regression**: scriptfix must never raise the
+    The hard CI gate is **no regression**: gurmukhifix must never raise the
     character error rate of any script above the raw-Tesseract baseline. A
     positive average improvement is the aspirational target and is reported but
     not required (the bundled ground truth is mostly already-clean text).
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description="scriptfix accuracy benchmark")
+    parser = argparse.ArgumentParser(description="gurmukhifix accuracy benchmark")
     parser.add_argument(
         "--ground-truth-dir",
         default=str(Path(__file__).parent / "ground_truth"),
@@ -267,12 +267,12 @@ def main() -> int:
 
     if regressions:
         print(
-            "✗ REGRESSION: scriptfix increased CER for: "
+            "✗ REGRESSION: gurmukhifix increased CER for: "
             + ", ".join(sorted(regressions))
         )
         return 1
 
-    print("✓ No regression: scriptfix never increased CER over raw Tesseract.")
+    print("✓ No regression: gurmukhifix never increased CER over raw Tesseract.")
     if avg_improvement >= args.target:
         print(f"✓ Meets {args.target:.0f}% average CER improvement target.")
     else:

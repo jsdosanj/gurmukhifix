@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from scriptfix.ligature import LigatureHandler, reassemble_ligatures
-from scriptfix.diacritic import DiacriticRecovery, recover_diacritics
+from gurmukhifix.ligature import LigatureHandler, reassemble_ligatures
+from gurmukhifix.diacritic import DiacriticRecovery, recover_diacritics
 
 
 class TestLigatureHandler:

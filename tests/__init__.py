@@ -1,1 +1,1 @@
-"""tests package for scriptfix."""
+"""tests package for gurmukhifix."""
