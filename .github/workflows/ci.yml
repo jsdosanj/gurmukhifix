@@ -30,6 +30,9 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v
 
+      - name: Accuracy benchmark (no-regression gate)
+        run: python -m tests.benchmark
+
       - name: Build package
         if: matrix.python-version == '3.12'
         run: |
