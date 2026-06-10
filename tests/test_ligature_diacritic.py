@@ -99,6 +99,28 @@ class TestDiacriticRecovery:
         assert result == correct_order
         assert corrections == []
 
+    def test_sihari_after_consonant_nukta_unchanged(self) -> None:
+        # A sihari that follows consonant + nukta is correctly placed.
+        dr = DiacriticRecovery("gurmukhi")
+        text = "ਜ਼ਿ"  # ja + nukta + sihari
+        result, corrections = dr.recover(text)
+        assert result == text
+        assert corrections == []
+
+    def test_nukta_order_fixed(self) -> None:
+        # Nukta emitted after the vowel sign must move before it: ਸਾ਼ -> ਸ਼ਾ
+        dr = DiacriticRecovery("gurmukhi")
+        result, corrections = dr.recover("ਸਾ਼")
+        assert result == "ਸ਼ਾ"
+        assert any(c["rule"] == "nukta_order_fix" for c in corrections)
+
+    def test_nukta_already_ordered_unchanged(self) -> None:
+        dr = DiacriticRecovery("punjabi")
+        text = "ਸ਼ਾ"  # consonant + nukta + vowel (canonical)
+        result, corrections = dr.recover(text)
+        assert result == text
+        assert corrections == []
+
     def test_hamza_carrier_farsi(self) -> None:
         dr = DiacriticRecovery("farsi")
         # Standalone hamza following ye should become ئ

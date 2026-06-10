@@ -11,21 +11,11 @@ small script-specific helpers (for example, join behaviour for RTL scripts).
 from __future__ import annotations
 
 import unicodedata
-from pathlib import Path
 from typing import Any
 
 import regex
-import yaml
 
-_CONFIG_DIR = Path(__file__).parent / "configs"
-
-
-def _load_config(language: str) -> dict[str, Any]:
-    path = _CONFIG_DIR / f"{language}.yaml"
-    if not path.exists():
-        raise FileNotFoundError(f"No config found for language '{language}' at {path}")
-    with path.open(encoding="utf-8") as fh:
-        return yaml.safe_load(fh)
+from .config import load_config as _load_config
 
 
 class LigatureHandler:
