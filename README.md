@@ -2,7 +2,9 @@
 
 > Tesseract OCR post-processing engine for handwritten South Asian and Persian scripts.
 > Corrects character misrecognition, ligature errors, and diacritic placement for
-> **Gurmukhi, Punjabi, Hindi, Urdu, and Farsi**.
+> **Gurmukhi, Punjabi, Hindi, Devanagari, Urdu, and Farsi**.
+
+**🌐 [Live demo &amp; docs →](https://jsdosanj.github.io/gurmukhifix/)** — paste OCR text and watch it become clean Unicode, entirely in your browser.
 
 <!-- SPDX-License-Identifier: MIT -->
 
