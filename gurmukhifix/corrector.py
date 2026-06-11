@@ -33,7 +33,12 @@ def _normalize(text: str, form: str = "NFC") -> str:
 class CharacterCorrector:
     """Applies confusion-pair and diacritic corrections for a given script."""
 
-    def __init__(self, language: str) -> None:
+    def __init__(
+        self,
+        language: str,
+        promoted: list[tuple[str, str]] | None = None,
+        validator: ScriptValidator | None = None,
+    ) -> None:
         self.language = language
         self.config = _load_config(language)
         self.norm_form: str = self.config.get("normalization", "NFC")
@@ -67,8 +72,18 @@ class CharacterCorrector:
         ] + [(k, v, "diacritic_pair") for k, v in self._diacritic_map.items()]
         self._candidates.sort(key=lambda t: len(t[0]), reverse=True)
 
-        # Validator used to score the badness of candidate corrections.
-        self._validator = ScriptValidator(language)
+        # Corpus-learned, human-confirmed pairs promoted by the learner. Unlike
+        # the built-in pairs (which need a validity *improvement* to fire), these
+        # carry external evidence, so they apply on equal-or-better validity.
+        self._promoted: list[tuple[str, str]] = [
+            (_normalize(w, self.norm_form), _normalize(c, self.norm_form))
+            for w, c in (promoted or [])
+            if w and _normalize(w, self.norm_form) != _normalize(c, self.norm_form)
+        ]
+
+        # Validator used to score the badness of candidate corrections. Shared
+        # with the rest of the pipeline when injected, to avoid rebuilding it.
+        self._validator = validator or ScriptValidator(language)
 
     # ------------------------------------------------------------------
     # Public API
@@ -88,37 +103,71 @@ class CharacterCorrector:
         """
         text = _normalize(text, self.norm_form)
         corrections: list[dict[str, Any]] = []
+
+        # 1. Corpus-learned promoted corrections (applied on equal-or-better
+        #    validity — they carry external human evidence).
+        text = self._apply_promoted(text, corrections)
+
         if not self._candidates:
             return text, corrections
 
-        # Each accepted substitution strictly lowers badness (bounded below by
-        # 0), so the loop terminates; the cap is a defensive backstop only.
+        # 2. Built-in confusion/diacritic repair, evidence-gated on a strict
+        #    validity improvement. `base` is carried forward across iterations
+        #    instead of recomputed, and only keys actually present in the text
+        #    are scanned — each accepted substitution strictly lowers badness, so
+        #    the loop terminates; the cap is a defensive backstop only.
+        base = self._validator.badness(text)
         max_iterations = len(text) + 8
         for _ in range(max_iterations):
-            base = self._validator.badness(text)
             if base <= 0:
                 break  # already well-formed — no evidence to correct against
 
-            best: tuple[float, int, str, str, str] | None = None  # delta,pos,key,repl,rule
-            for pos in range(len(text)):
-                for key, repl, rule in self._candidates:
-                    if not text.startswith(key, pos):
-                        continue
-                    candidate = text[:pos] + repl + text[pos + len(key):]
-                    delta = base - self._validator.badness(candidate)
+            best: tuple[float, int, str, str, str, float] | None = None
+            for key, repl, rule in self._candidates:
+                start = text.find(key)
+                if start == -1:
+                    continue  # cheap pre-filter: key not present at all
+                while start != -1:
+                    candidate = text[:start] + repl + text[start + len(key):]
+                    cand_badness = self._validator.badness(candidate)
+                    delta = base - cand_badness
                     if delta > 0 and (best is None or delta > best[0]):
-                        best = (delta, pos, key, repl, rule)
+                        best = (delta, start, key, repl, rule, cand_badness)
+                    start = text.find(key, start + 1)
 
             if best is None:
                 break  # no substitution provides positive evidence — stop guessing
 
-            _, pos, key, repl, rule = best
+            _, pos, key, repl, rule, base = best
             corrections.append(
                 {"original": key, "corrected": repl, "rule": rule, "position": pos}
             )
             text = text[:pos] + repl + text[pos + len(key):]
 
         return text, corrections
+
+    def _apply_promoted(
+        self, text: str, corrections: list[dict[str, Any]]
+    ) -> str:
+        """Apply promoted corrections that don't worsen validity."""
+        for wrong, correct in self._promoted:
+            start = text.find(wrong)
+            while start != -1:
+                candidate = text[:start] + correct + text[start + len(wrong):]
+                if self._validator.badness(candidate) <= self._validator.badness(text):
+                    corrections.append(
+                        {
+                            "original": wrong,
+                            "corrected": correct,
+                            "rule": "promoted_correction",
+                            "position": start,
+                        }
+                    )
+                    text = candidate
+                    start = text.find(wrong, start + len(correct))
+                else:
+                    start = text.find(wrong, start + 1)
+        return text
 
     def validate_sequences(self, text: str) -> list[dict[str, Any]]:
         """Check *text* for impossible sequences defined in the config.

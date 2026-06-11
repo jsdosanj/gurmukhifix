@@ -79,9 +79,19 @@
     renderReport(result);
   }
 
+  // Build a DOM element with class + text/children. Using textContent (never
+  // innerHTML) means OCR/clipboard text can never inject markup — no XSS.
+  function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
   function renderReport(r) {
     const box = $("report");
-    if (!r.input.trim()) { box.innerHTML = ""; return; }
+    box.replaceChildren();
+    if (!r.input.trim()) return;
 
     const changed = r.changes.length > 0;
     const cls = changed ? "ok" : (r.after.badness > 0 ? "warn" : "clean");
@@ -89,35 +99,47 @@
       ? `${r.changes.length} correction${r.changes.length > 1 ? "s" : ""} applied`
       : (r.after.badness > 0 ? "No confident fix — flagged for review" : "Already clean — no changes needed");
 
-    let html = `<div class="report-head ${cls}"><span class="dot"></span>${headline}</div>`;
+    const head = el("div", `report-head ${cls}`);
+    head.appendChild(el("span", "dot"));
+    head.appendChild(document.createTextNode(headline));
+    box.appendChild(head);
 
-    html += `<div class="metrics">
-      <div class="metric"><span>Validity badness</span><b>${r.before.badness} → ${r.after.badness}</b></div>
-      <div class="metric"><span>Characters</span><b>${Array.from(r.output).length}</b></div>
-    </div>`;
+    const metrics = el("div", "metrics");
+    const m1 = el("div", "metric");
+    m1.appendChild(el("span", null, "Validity badness"));
+    m1.appendChild(el("b", null, `${r.before.badness} → ${r.after.badness}`));
+    const m2 = el("div", "metric");
+    m2.appendChild(el("span", null, "Characters"));
+    m2.appendChild(el("b", null, String(Array.from(r.output).length)));
+    metrics.append(m1, m2);
+    box.appendChild(metrics);
 
     if (changed) {
-      html += '<div class="changes"><h4>Corrections</h4><ul>';
+      const wrap = el("div", "changes");
+      wrap.appendChild(el("h4", null, "Corrections"));
+      const ul = el("ul");
       r.changes.forEach((c) => {
-        html += `<li><code class="from">${esc(c.from)}</code><span class="ar">→</span><code class="to">${esc(c.to)}</code><span class="rule">${esc(c.rule)}</span></li>`;
+        const li = el("li");
+        li.appendChild(el("code", "from", c.from));
+        li.appendChild(el("span", "ar", "→"));
+        li.appendChild(el("code", "to", c.to));
+        li.appendChild(el("span", "rule", c.rule));
+        ul.appendChild(li);
       });
-      html += "</ul></div>";
+      wrap.appendChild(ul);
+      box.appendChild(wrap);
     }
 
-    const vios = r.after.violations;
-    if (vios.length) {
-      html += '<div class="violations"><h4>Remaining flags</h4><div class="vchips">';
-      vios.forEach((v) => {
-        html += `<span class="vchip ${SEV_NAME[v.sev] || "review"}">${esc(v.label)}</span>`;
+    if (r.after.violations.length) {
+      const wrap = el("div", "violations");
+      wrap.appendChild(el("h4", null, "Remaining flags"));
+      const chips = el("div", "vchips");
+      r.after.violations.forEach((v) => {
+        chips.appendChild(el("span", `vchip ${SEV_NAME[v.sev] || "review"}`, v.label));
       });
-      html += "</div></div>";
+      wrap.appendChild(chips);
+      box.appendChild(wrap);
     }
-
-    box.innerHTML = html;
-  }
-
-  function esc(s) {
-    return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   }
 
   // ── Copy buttons ───────────────────────────────────────────────────────────
@@ -141,7 +163,11 @@
     return new Promise((resolve, reject) => {
       if (tesseractLoaded && window.Tesseract) return resolve();
       const sc = document.createElement("script");
-      sc.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+      // Pinned version + Subresource Integrity: if the CDN file is tampered
+      // with, the browser refuses to run it.
+      sc.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+      sc.integrity = "sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F";
+      sc.crossOrigin = "anonymous";
       sc.onload = () => { tesseractLoaded = true; resolve(); };
       sc.onerror = () => reject(new Error("Failed to load Tesseract.js"));
       document.head.appendChild(sc);

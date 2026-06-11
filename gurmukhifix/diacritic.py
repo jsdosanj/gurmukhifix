@@ -19,11 +19,11 @@ from .validator import ScriptValidator
 class DiacriticRecovery:
     """Recovers dropped or misplaced diacritics for a given script."""
 
-    def __init__(self, language: str) -> None:
+    def __init__(self, language: str, validator: ScriptValidator | None = None) -> None:
         self.language = language
         self.config = _load_config(language)
         self.norm_form: str = self.config.get("normalization", "NFC")
-        self._validator = ScriptValidator(language)
+        self._validator = validator or ScriptValidator(language)
 
     # ------------------------------------------------------------------
     # Public API
@@ -50,6 +50,10 @@ class DiacriticRecovery:
             text, c = self._recover_sihari_order(text)
             corrections.extend(c)
             text, c = self._fix_nukta_order(text)
+            corrections.extend(c)
+
+        if self.language in ("hindi", "devanagari", "marathi", "nepali", "sanskrit"):
+            text, c = self._recover_devanagari_imatra(text)
             corrections.extend(c)
 
         if self.language in ("urdu", "farsi"):
@@ -155,6 +159,50 @@ class DiacriticRecovery:
                 )
             i += 1
         return "".join(chars), corrections
+
+    def _recover_devanagari_imatra(self, text: str) -> tuple[str, list[dict[str, Any]]]:
+        """Reorder a misplaced Devanagari i-matra (ि U+093F) after its consonant.
+
+        Like the Gurmukhi sihari, the i-matra is drawn to the left of its
+        consonant but must be encoded after it. OCR that emits visual order
+        produces ``ि + consonant``; we swap it to ``consonant + ि`` only when the
+        i-matra is genuinely orphaned (not already following a consonant, looking
+        past an attached nukta).
+        """
+        corrections: list[dict[str, Any]] = []
+        imatra = "ि"
+        consonant = regex.compile(r"[क-हक़-य़]")
+        nukta = "़"
+
+        result: list[str] = []
+        i = 0
+        while i < len(text):
+            ch = text[i]
+            j = i - 1
+            if j >= 0 and text[j] == nukta:
+                j -= 1
+            preceded_by_consonant = j >= 0 and bool(consonant.match(text[j]))
+            if (
+                ch == imatra
+                and not preceded_by_consonant
+                and i + 1 < len(text)
+                and consonant.match(text[i + 1])
+            ):
+                cons = text[i + 1]
+                corrections.append(
+                    {
+                        "original": ch + cons,
+                        "corrected": cons + ch,
+                        "rule": "imatra_order_fix",
+                        "position": i,
+                    }
+                )
+                result.append(cons + ch)
+                i += 2
+            else:
+                result.append(ch)
+                i += 1
+        return "".join(result), corrections
 
     def _recover_hamza_carrier(self, text: str) -> tuple[str, list[dict[str, Any]]]:
         """Ensure standalone hamza (U+0621) has an appropriate carrier in context."""

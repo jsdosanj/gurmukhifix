@@ -84,12 +84,17 @@ class TesseractOutput:
 class DocumentProcessor:
     """Orchestrates the full correction pipeline for a single document."""
 
-    def __init__(self, language: str) -> None:
+    def __init__(self, language: str, store: Any = None) -> None:
         self.language = language
-        self._corrector = CharacterCorrector(language)
+        # One validator shared across the pipeline (avoids building it 3x).
         self._validator = ScriptValidator(language)
+        # Corpus-learned promoted corrections, if a CorrectionStore is provided.
+        promoted = store.get_promoted_pairs(language) if store is not None else None
+        self._corrector = CharacterCorrector(
+            language, promoted=promoted, validator=self._validator
+        )
         self._ligature = LigatureHandler(language)
-        self._diacritic = DiacriticRecovery(language)
+        self._diacritic = DiacriticRecovery(language, validator=self._validator)
 
         cfg = self._corrector.config
         thresholds = cfg.get("confidence_thresholds", {})
@@ -119,7 +124,11 @@ class DocumentProcessor:
 
         for word_idx, word in enumerate(tess_output.words):
             text: str = word.get("text", "")
-            conf: float = float(word.get("conf", word.get("confidence", 50.0)))
+            # A non-numeric confidence must not abort the whole document.
+            try:
+                conf = float(word.get("conf", word.get("confidence", 50.0)))
+            except (TypeError, ValueError):
+                conf = 50.0
             bbox: list[int] = word.get("bbox", word.get("bounding_box", []))
             alternatives: list[dict[str, Any]] = word.get("alternatives", [])
 
@@ -249,6 +258,7 @@ def process_document(
     tess_json: dict[str, Any] | str | Path,
     language: str,
     output_dir: Path | str | None = None,
+    store: Any = None,
 ) -> dict[str, Any]:
     """High-level function: process a Tesseract JSON document.
 
@@ -256,6 +266,7 @@ def process_document(
         tess_json: Tesseract JSON as a dict, a JSON string, or a file path.
         language: Target language/script.
         output_dir: If provided, write output artifacts to this directory.
+        store: Optional CorrectionStore; its promoted corrections are applied.
 
     Returns:
         Result dict (see DocumentProcessor.process).
@@ -273,7 +284,7 @@ def process_document(
     else:
         tess_output = TesseractOutput(tess_json)
 
-    processor = DocumentProcessor(language)
+    processor = DocumentProcessor(language, store=store)
     result = processor.process(tess_output)
 
     if output_dir is not None:

@@ -143,6 +143,7 @@ impossible_sequences:
 
 # Valid Unicode ranges for this script
 valid_ranges:
+  - [0x200C, 0x200D]  # ZWNJ / ZWJ — required joiners, not invalid
   - [0x0A00, 0x0A7F]
   - [0x0020, 0x007E]  # ASCII punctuation/numerals
 

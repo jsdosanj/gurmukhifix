@@ -18,7 +18,7 @@ from typing import Any
 
 import click
 
-from .integration import process_document
+from .integration import DocumentProcessor, TesseractOutput, process_document
 from .learner import CorrectionStore
 
 SUPPORTED_LANGUAGES = ["gurmukhi", "punjabi", "hindi", "devanagari", "urdu", "farsi"]
@@ -49,10 +49,19 @@ def cli() -> None:
     type=click.Path(),
     help="Directory for output artifacts."
 )
-def correct(input_file: str, lang: str, output_dir: str) -> None:
+@click.option(
+    "--corrections", "db_path", default=None, type=click.Path(exists=True),
+    help="Optional corrections database; its promoted corrections are applied."
+)
+def correct(input_file: str, lang: str, output_dir: str, db_path: str | None) -> None:
     """Correct a single Tesseract JSON file."""
     click.echo(f"Processing {input_file} [{lang}] …")
-    result = process_document(Path(input_file), lang, output_dir=output_dir)
+    store = CorrectionStore(db_path) if db_path else None
+    try:
+        result = process_document(Path(input_file), lang, output_dir=output_dir, store=store)
+    finally:
+        if store is not None:
+            store.close()
     n_corr = len(result["correction_report"])
     n_flag = len(result["flagged"])
     elapsed = result["metadata"]["processing_time_seconds"]
@@ -67,11 +76,24 @@ def correct(input_file: str, lang: str, output_dir: str) -> None:
 # batch
 # ---------------------------------------------------------------------------
 
-def _process_file_worker(args: tuple[str, str, str]) -> dict[str, Any]:
+# Each worker process builds one DocumentProcessor (and optional store) and
+# reuses it across every file it handles — avoids re-parsing YAML and
+# recompiling regex per file.
+_WORKER: dict[str, Any] = {}
+
+
+def _worker_init(language: str, db_path: str | None) -> None:
+    store = CorrectionStore(db_path) if db_path else None
+    _WORKER["processor"] = DocumentProcessor(language, store=store)
+
+
+def _process_file_worker(args: tuple[str, str]) -> dict[str, Any]:
     """Worker function for parallel batch processing."""
-    input_file, lang, output_dir = args
+    input_file, output_dir = args
     try:
-        result = process_document(Path(input_file), lang, output_dir=output_dir)
+        processor = _WORKER["processor"]
+        result = processor.process(TesseractOutput.from_file(Path(input_file)))
+        processor.write_outputs(result, output_dir)
         return {
             "file": input_file,
             "status": "ok",
@@ -106,12 +128,17 @@ def _process_file_worker(args: tuple[str, str, str]) -> dict[str, Any]:
     "--pattern", default="*.json", show_default=True,
     help="Glob pattern for input files."
 )
+@click.option(
+    "--corrections", "db_path", default=None, type=click.Path(exists=True),
+    help="Optional corrections database; its promoted corrections are applied."
+)
 def batch(
     input_dir: str,
     lang: str,
     output_dir: str,
     workers: int | None,
     pattern: str,
+    db_path: str | None,
 ) -> None:
     """Process a directory of Tesseract JSON files in parallel."""
     input_path = Path(input_dir)
@@ -125,13 +152,20 @@ def batch(
 
     click.echo(f"Batch processing {len(files)} file(s) with {workers} worker(s) [{lang}] …")
 
-    tasks: list[tuple[str, str, str]] = []
+    # Mirror each input's path *relative to the input dir* into the output dir, so
+    # files that share a stem in different subfolders don't clobber each other.
+    tasks: list[tuple[str, str]] = []
     for f in files:
-        file_output = str(Path(output_dir) / f.stem)
-        tasks.append((str(f), lang, file_output))
+        try:
+            rel = f.relative_to(input_path).with_suffix("")
+        except ValueError:
+            rel = Path(f.stem)
+        tasks.append((str(f), str(Path(output_dir) / rel)))
 
     results: list[dict[str, Any]] = []
-    with ProcessPoolExecutor(max_workers=workers) as pool:
+    with ProcessPoolExecutor(
+        max_workers=workers, initializer=_worker_init, initargs=(lang, db_path)
+    ) as pool:
         futures = {pool.submit(_process_file_worker, t): t for t in tasks}
         for future in as_completed(futures):
             res = future.result()

@@ -1,7 +1,10 @@
 """Learning and Adaptation Layer for gurmukhifix.
 
-Stores confirmed manual corrections in SQLite and promotes high-confidence
-patterns to the primary confusion dictionary via Bayesian confidence updates.
+Stores confirmed manual corrections in SQLite and promotes patterns to the
+primary confusion dictionary once they have been confirmed at least
+``_PROMOTION_THRESHOLD`` times (a frequency threshold, not a Bayesian model).
+Promoted pairs can be fed back into :class:`~gurmukhifix.corrector.CharacterCorrector`
+so the tool improves on a corpus over time.
 """
 
 from __future__ import annotations
@@ -36,13 +39,22 @@ class CorrectionStore:
             self.db_path = Path(db_path)
 
         if isinstance(self.db_path, Path):
-            self._conn = sqlite3.connect(str(self.db_path))
+            self._conn = sqlite3.connect(str(self.db_path), timeout=30.0)
         else:
             # For URI-style filenames, enable SQLite URI handling
             self._conn = sqlite3.connect(
-                self.db_path, uri=isinstance(self.db_path, str) and self.db_path.startswith("file:")
+                self.db_path,
+                timeout=30.0,
+                uri=isinstance(self.db_path, str) and self.db_path.startswith("file:"),
             )
         self._conn.row_factory = sqlite3.Row
+        # Concurrency hardening: WAL lets readers and a writer coexist, and a
+        # busy timeout makes concurrent writers wait rather than fail outright.
+        self._conn.execute("PRAGMA busy_timeout = 30000")
+        try:
+            self._conn.execute("PRAGMA journal_mode = WAL")
+        except sqlite3.Error:  # pragma: no cover - e.g. some in-memory/URI cases
+            pass
         self._ensure_schema()
 
     # ------------------------------------------------------------------
@@ -79,43 +91,44 @@ class CorrectionStore:
 
         Returns the row id of the new corrections record.
         """
-        cur = self._conn.execute(
-            """
-            INSERT INTO corrections
-              (script, original_sequence, corrected_sequence,
-               context_before, context_after, source_document,
-               reviewer_id, timestamp, confidence_delta, rule_applied)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                script,
-                original_sequence,
-                corrected_sequence,
-                context_before[:10],
-                context_after[:10],
-                source_document,
-                reviewer_id,
-                datetime.now(timezone.utc).isoformat(),
-                confidence_delta,
-                rule_applied,
-            ),
-        )
-        row_id = cur.lastrowid
+        # Insert the log row, update aggregate stats, and check promotion all in
+        # one transaction so a crash can't leave the stats out of sync with the
+        # log. `with self._conn` commits on success and rolls back on error.
+        with self._conn:
+            cur = self._conn.execute(
+                """
+                INSERT INTO corrections
+                  (script, original_sequence, corrected_sequence,
+                   context_before, context_after, source_document,
+                   reviewer_id, timestamp, confidence_delta, rule_applied)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    script,
+                    original_sequence,
+                    corrected_sequence,
+                    context_before[:10],
+                    context_after[:10],
+                    source_document,
+                    reviewer_id,
+                    datetime.now(timezone.utc).isoformat(),
+                    confidence_delta,
+                    rule_applied,
+                ),
+            )
+            row_id = cur.lastrowid
 
-        # Update aggregate stats
-        self._conn.execute(
-            """
-            INSERT INTO correction_stats (script, original_sequence, corrected_sequence, count)
-            VALUES (?, ?, ?, 1)
-            ON CONFLICT(script, original_sequence, corrected_sequence)
-            DO UPDATE SET count = count + 1
-            """,
-            (script, original_sequence, corrected_sequence),
-        )
-        self._conn.commit()
+            self._conn.execute(
+                """
+                INSERT INTO correction_stats (script, original_sequence, corrected_sequence, count)
+                VALUES (?, ?, ?, 1)
+                ON CONFLICT(script, original_sequence, corrected_sequence)
+                DO UPDATE SET count = count + 1
+                """,
+                (script, original_sequence, corrected_sequence),
+            )
 
-        # Check for promotion
-        self._maybe_promote(script, original_sequence, corrected_sequence)
+            self._maybe_promote(script, original_sequence, corrected_sequence)
 
         return row_id  # type: ignore[return-value]
 
@@ -125,7 +138,11 @@ class CorrectionStore:
         original_sequence: str,
         corrected_sequence: str,
     ) -> None:
-        """Promote a correction pair to the primary dictionary if count >= threshold."""
+        """Promote a pair once it reaches the confirmation threshold.
+
+        Must be called inside an open transaction (no commit here); the caller's
+        ``with self._conn`` block commits the read-modify-write atomically.
+        """
         row = self._conn.execute(
             """
             SELECT count, promoted FROM correction_stats
@@ -142,7 +159,6 @@ class CorrectionStore:
                 """,
                 (script, original_sequence, corrected_sequence),
             )
-            self._conn.commit()
             logger.info(
                 "Promoted correction: %r -> %r for script %r",
                 original_sequence, corrected_sequence, script,
@@ -164,6 +180,17 @@ class CorrectionStore:
             (script,),
         ).fetchall()
         return [dict(row) for row in rows]
+
+    def get_promoted_pairs(self, script: str) -> list[tuple[str, str]]:
+        """Return promoted corrections as ``(original, corrected)`` tuples.
+
+        This is the form :class:`~gurmukhifix.corrector.CharacterCorrector`
+        consumes to apply corpus-learned, human-confirmed corrections.
+        """
+        return [
+            (row["original_sequence"], row["corrected_sequence"])
+            for row in self.get_promoted_corrections(script)
+        ]
 
     def get_stats(self, script: str | None = None) -> list[dict[str, Any]]:
         """Return aggregate correction statistics."""
