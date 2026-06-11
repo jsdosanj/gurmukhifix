@@ -148,6 +148,7 @@ impossible_sequences:
     severity: WARN
 
 valid_ranges:
+  - [0x200C, 0x200D]  # ZWNJ / ZWJ — required joiners, not invalid
   - [0x0600, 0x06FF]
   - [0x0750, 0x077F]
   - [0xFB50, 0xFDFF]

@@ -26,6 +26,11 @@ SEVERITY_WEIGHTS = {
     SEVERITY_REVIEW: 1.0,
 }
 
+# Upper bound (seconds) for any single config-supplied regex match. Bundled
+# configs are safe, but this caps catastrophic backtracking if a custom config
+# ever supplies a pathological pattern, turning a hang into a skipped rule.
+_REGEX_TIMEOUT = 1.0
+
 
 class ScriptValidator:
     """Validates text against script-grammar rules for a specific language."""
@@ -68,9 +73,13 @@ class ScriptValidator:
         text = unicodedata.normalize(self.norm_form, text)
         violations: list[dict[str, Any]] = []
 
-        # Pattern-based rules from config
+        # Pattern-based rules from config (timeout-guarded against ReDoS).
         for rule in self._rules:
-            for m in rule["pattern"].finditer(text):
+            try:
+                matches = list(rule["pattern"].finditer(text, timeout=_REGEX_TIMEOUT))
+            except TimeoutError:
+                continue
+            for m in matches:
                 violations.append(
                     {
                         "rule": "impossible_sequence",

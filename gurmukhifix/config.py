@@ -11,6 +11,7 @@ overridden), which is what lets e.g. ``punjabi`` build on ``gurmukhi`` and
 from __future__ import annotations
 
 import copy
+import functools
 from pathlib import Path
 from typing import Any
 
@@ -54,12 +55,7 @@ def _merge(parent: dict[str, Any], child: dict[str, Any]) -> dict[str, Any]:
     return merged
 
 
-def load_config(language: str, _seen: tuple[str, ...] = ()) -> dict[str, Any]:
-    """Load the config for *language*, resolving any ``extends:`` chain.
-
-    Raises FileNotFoundError for an unknown language and ValueError on a
-    circular ``extends`` reference.
-    """
+def _resolve(language: str, _seen: tuple[str, ...] = ()) -> dict[str, Any]:
     if language in _seen:
         chain = " -> ".join((*_seen, language))
         raise ValueError(f"Circular 'extends' in config chain: {chain}")
@@ -67,6 +63,24 @@ def load_config(language: str, _seen: tuple[str, ...] = ()) -> dict[str, Any]:
     cfg = _read_raw(language)
     parent_name = cfg.get("extends")
     if parent_name:
-        parent = load_config(parent_name, _seen + (language,))
+        parent = _resolve(parent_name, _seen + (language,))
         cfg = _merge(parent, cfg)
     return cfg
+
+
+@functools.lru_cache(maxsize=None)
+def _load_resolved(language: str) -> dict[str, Any]:
+    """Parse + merge the config once per language (cached)."""
+    return _resolve(language)
+
+
+def load_config(language: str) -> dict[str, Any]:
+    """Load the config for *language*, resolving any ``extends:`` chain.
+
+    The parse-and-merge result is cached per language; a fresh deep copy is
+    returned each call so callers may treat it as their own mutable dict.
+
+    Raises FileNotFoundError for an unknown language and ValueError on a
+    circular ``extends`` reference.
+    """
+    return copy.deepcopy(_load_resolved(language))
