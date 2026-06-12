@@ -27,6 +27,7 @@
         <a href="scripts/">Scripts</a>
         <a href="blog/">Blog</a>
         <a href="index.html#install">Install</a>
+        <a href="index.html#contact">Contact</a>
         <a href="license.html">License</a>
         <a class="nav-cta" href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub ↗</a>
     </nav>
@@ -118,6 +119,27 @@ gurmukhifix correct --input out.json \
   --lang devanagari --workers 4</code></pre></div>
     </div>
   </section>
+  <section class="contact" id="contact">
+    <div class="section-head"><h2>Get in touch</h2><p>Questions, bug reports, research collaborations or integration help — send a message and I'll get back to you.</p></div>
+    <div class="contact-card">
+      <form id="cf" method="POST" data-e="ZG90cy13aGlza3MuNnJAaWNsb3VkLmNvbQ==">
+        <input type="hidden" name="_subject" value="New GurmukhiFix inquiry">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_next" value="https://jsdosanj.github.io/gurmukhifix/index.html?sent=1#contact">
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off">
+        <label class="cf-field"><span>Name</span><input type="text" name="name" required placeholder="Your name"></label>
+        <label class="cf-field"><span>Email</span><input type="email" name="email" required placeholder="you@example.com"></label>
+        <label class="cf-field"><span>Message</span><textarea name="message" rows="5" required placeholder="How can I help?"></textarea></label>
+        <button class="btn btn-primary" type="submit">Send message</button>
+      </form>
+      <div id="ok" class="cf-ok" hidden>
+        <span class="cf-ok-mark">✓</span>
+        <p>Thanks — your message has been sent. I'll be in touch soon.</p>
+      </div>
+    </div>
+  </section>
+
   <footer class="footer">
     <div class="footer-inner">
       <div>
@@ -137,5 +159,9 @@ gurmukhifix correct --input out.json \
   </footer>
   <script src="assets/gurmukhifix.js"></script>
   <script src="assets/app.js"></script>
+  <script>
+   (function(){try{var f=document.getElementById('cf');f.action='https://formsubmit.co/'+atob(f.getAttribute('data-e'));}catch(e){}})();
+   if(location.search.indexOf('sent=1')>=0){var o=document.getElementById('ok'),f=document.getElementById('cf');if(o)o.hidden=false;if(f)f.style.display='none';}
+  </script>
 </body>
 </html>

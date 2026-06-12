@@ -354,3 +354,29 @@ section { scroll-margin-top: 80px; }
   .ex-table code { font-size: 17px; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+
+/* Contact */
+.contact { max-width: var(--maxw); margin: 0 auto; padding: 80px 24px; }
+.contact-card {
+  max-width: 620px; margin: 32px auto 0; background: var(--panel);
+  border: 1px solid var(--panel-brd); border-radius: var(--radius);
+  padding: 30px; backdrop-filter: blur(8px); box-shadow: 0 30px 60px rgba(0, 0, 0, 0.35);
+}
+.contact-card form { display: flex; flex-direction: column; gap: 18px; }
+.cf-field { display: flex; flex-direction: column; gap: 7px; font-size: 13px; color: var(--muted); }
+.cf-field input, .cf-field textarea {
+  font-family: var(--font); font-size: 15px; color: var(--ink); background: var(--bg-2);
+  border: 1px solid var(--panel-brd); border-radius: 10px; padding: 12px 14px; width: 100%;
+  transition: border-color 0.15s;
+}
+.cf-field textarea { resize: vertical; min-height: 120px; }
+.cf-field input:focus, .cf-field textarea:focus { outline: none; border-color: var(--indigo); }
+.cf-field input::placeholder, .cf-field textarea::placeholder { color: var(--faint); }
+.contact-card .btn { align-self: flex-start; margin-top: 4px; }
+.cf-ok { display: flex; align-items: center; gap: 14px; padding: 8px 0; }
+.cf-ok-mark {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 40px; height: 40px; border-radius: 999px; font-size: 20px; font-weight: 700;
+  color: var(--good); background: rgba(70, 211, 154, 0.12); border: 1px solid rgba(70, 211, 154, 0.4);
+}
+.cf-ok p { margin: 0; color: var(--ink); font-size: 16px; }
