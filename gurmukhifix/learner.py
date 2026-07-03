@@ -184,13 +184,47 @@ class CorrectionStore:
     def get_promoted_pairs(self, script: str) -> list[tuple[str, str]]:
         """Return promoted corrections as ``(original, corrected)`` tuples.
 
-        This is the form :class:`~gurmukhifix.corrector.CharacterCorrector`
-        consumes to apply corpus-learned, human-confirmed corrections.
+        This is the legacy form :class:`~gurmukhifix.corrector.CharacterCorrector`
+        consumes to apply corpus-learned, human-confirmed corrections. Prefer
+        :meth:`get_promoted_rules`, which also carries the confirmed context.
         """
         return [
             (row["original_sequence"], row["corrected_sequence"])
             for row in self.get_promoted_corrections(script)
         ]
+
+    def get_promoted_rules(self, script: str) -> list[dict[str, Any]]:
+        """Return promoted corrections with their most common confirmed context.
+
+        Each rule is ``{original_sequence, corrected_sequence, context_before,
+        context_after}``. The context is the surrounding text that most frequently
+        accompanied the confirmed correction; the corrector uses it to scope a
+        same-validity correction to where a human actually saw it, rather than
+        rewriting every occurrence globally.
+        """
+        rules: list[dict[str, Any]] = []
+        for row in self.get_promoted_corrections(script):
+            orig, corr = row["original_sequence"], row["corrected_sequence"]
+            ctx = self._conn.execute(
+                """
+                SELECT context_before, context_after, COUNT(*) AS n
+                FROM corrections
+                WHERE script = ? AND original_sequence = ? AND corrected_sequence = ?
+                GROUP BY context_before, context_after
+                ORDER BY n DESC
+                LIMIT 1
+                """,
+                (script, orig, corr),
+            ).fetchone()
+            rules.append(
+                {
+                    "original_sequence": orig,
+                    "corrected_sequence": corr,
+                    "context_before": (ctx["context_before"] if ctx else "") or "",
+                    "context_after": (ctx["context_after"] if ctx else "") or "",
+                }
+            )
+        return rules
 
     def get_stats(self, script: str | None = None) -> list[dict[str, Any]]:
         """Return aggregate correction statistics."""
@@ -242,7 +276,7 @@ class CorrectionStore:
         """Close the database connection."""
         self._conn.close()
 
-    def __enter__(self) -> "CorrectionStore":
+    def __enter__(self) -> CorrectionStore:
         return self
 
     def __exit__(self, *_: Any) -> None:

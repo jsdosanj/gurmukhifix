@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use gurmukhifix in your research or heritage-digitisation work, please cite it as below."
+title: gurmukhifix
+type: software
+authors:
+  - family-names: "Singh Dosanjh"
+    given-names: "Jasvant"
+    alias: jsdosanj
+repository-code: "https://github.com/jsdosanj/gurmukhifix"
+url: "https://jsdosanj.github.io/gurmukhifix/"
+license: MIT
+version: 0.2.0
+date-released: 2026-07-03
+keywords:
+  - ocr
+  - gurmukhi
+  - gurbani
+  - indic
+  - tesseract
+abstract: >-
+  gurmukhifix is a safe, evidence-gated OCR post-processing engine for Gurmukhi
+  and other Indic scripts. It reverses the systematic Unicode-order and diacritic
+  errors that OCR makes on Gurmukhi (Punjabi), Hindi, and Devanagari, and is built
+  so it can never silently corrupt correct text. Every automatic change must clear
+  an evidence gate: verbatim Gurbani (scripture) words are locked, codepoint
+  substitutions require a strict script-validity gain or a dictionary hit, and
+  re-orderings into canonical order are always safe.
+# TODO: add a Zenodo DOI (doi:) here once the first archived release is minted.

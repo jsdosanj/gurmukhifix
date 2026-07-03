@@ -38,12 +38,24 @@
       valid: [[0x0a00, 0x0a7f], [0x0020, 0x007e]],
       confusion: { "ਸ਼": "ਸ", "ਖ਼": "ਖ", "ਗ਼": "ਗ", "ਜ਼": "ਜ", "ਫ਼": "ਫ" },
     },
-    devanagari: {
-      label: "Devanagari / Hindi",
+    hindi: {
+      label: "Hindi",
       sample: "नमस्ते दुनिया",
       consonants: [[0x0915, 0x0939], [0x0958, 0x095f]],
       matras: [0x093e, 0x093f, 0x0940, 0x0941, 0x0942, 0x0943, 0x0944, 0x0947, 0x0948, 0x094b, 0x094c],
-      sihari: null,
+      // The i-matra (ि) is the Devanagari analogue of the sihari: drawn before its
+      // consonant, encoded after. Reordered by the same pass.
+      sihari: 0x093f,
+      nukta: 0x093c,
+      valid: [[0x0900, 0x097f], [0x0020, 0x007e]],
+      confusion: {},
+    },
+    devanagari: {
+      label: "Devanagari",
+      sample: "नमस्ते दुनिया",
+      consonants: [[0x0915, 0x0939], [0x0958, 0x095f]],
+      matras: [0x093e, 0x093f, 0x0940, 0x0941, 0x0942, 0x0943, 0x0944, 0x0947, 0x0948, 0x094b, 0x094c],
+      sihari: 0x093f,
       nukta: 0x093c,
       valid: [[0x0900, 0x097f], [0x0020, 0x007e]],
       confusion: {},

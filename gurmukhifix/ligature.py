@@ -24,7 +24,7 @@ class LigatureHandler:
     def __init__(self, language: str, rtl_join_repair: bool | None = None) -> None:
         self.language = language
         self.config = _load_config(language)
-        self.norm_form: str = self.config.get("normalization", "NFC")
+        self.norm_form: Any = self.config.get("normalization", "NFC")
 
         # Load ligature rules from config (optional section)
         self._ligature_rules: list[dict[str, Any]] = self.config.get("ligature_rules", [])

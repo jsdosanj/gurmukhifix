@@ -38,7 +38,7 @@ class ScriptValidator:
     def __init__(self, language: str) -> None:
         self.language = language
         self.config = _load_config(language)
-        self.norm_form: str = self.config.get("normalization", "NFC")
+        self.norm_form: Any = self.config.get("normalization", "NFC")
 
         # Compile impossible-sequence patterns from config
         self._rules: list[dict[str, Any]] = []
@@ -53,7 +53,7 @@ class ScriptValidator:
 
         # Valid codepoint ranges
         self._valid_ranges: list[tuple[int, int]] = [
-            tuple(r) for r in self.config.get("valid_ranges", [])  # type: ignore[misc]
+            tuple(r) for r in self.config.get("valid_ranges", [])
         ]
 
     # ------------------------------------------------------------------
@@ -203,7 +203,7 @@ class ScriptValidator:
 
     @staticmethod
     def _has_base_consonant(
-        text: str, pos: int, consonant_range: "regex.Pattern[str]", nukta: str
+        text: str, pos: int, consonant_range: regex.Pattern[str], nukta: str
     ) -> bool:
         """Whether the dependent sign at *pos* has a valid base consonant.
 

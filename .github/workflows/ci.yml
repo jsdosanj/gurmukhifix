@@ -27,8 +27,16 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
+      - name: Lint (ruff)
+        if: matrix.python-version == '3.12'
+        run: ruff check .
+
+      - name: Type check (mypy)
+        if: matrix.python-version == '3.12'
+        run: mypy gurmukhifix
+
       - name: Run tests
-        run: pytest tests/ -v
+        run: pytest tests/ -v --cov=gurmukhifix --cov-report=term-missing --cov-fail-under=70
 
       - name: Accuracy benchmark (no-regression gate)
         run: python -m tests.benchmark
