@@ -19,6 +19,7 @@ from .corrector import CharacterCorrector
 from .diacritic import DiacriticRecovery
 from .lexicon import Lexicon
 from .ligature import LigatureHandler
+from .ocr import OCRDocument, load_ocr
 from .validator import ScriptValidator
 
 # Confidence band thresholds (can be overridden per language via config)
@@ -26,13 +27,16 @@ DEFAULT_PASS_THROUGH = 85.0
 DEFAULT_FLAG_ONLY = 60.0
 
 
-class TesseractOutput:
-    """Parses and wraps Tesseract JSON output."""
+class TesseractOutput(OCRDocument):
+    """Backward-compatible wrapper: a Tesseract-JSON :class:`~gurmukhifix.ocr.OCRDocument`.
+
+    New code should prefer :func:`gurmukhifix.ocr.load_ocr`, which accepts every
+    supported OCR format (Tesseract JSON/TSV/hOCR, ALTO, Surya, Google Vision, …).
+    """
 
     def __init__(self, data: dict[str, Any]) -> None:
-        self.raw = data
-        # Support both flat and nested Tesseract JSON formats
-        self.words: list[dict[str, Any]] = self._extract_words(data)
+        doc = OCRDocument.from_tesseract_json(data)
+        super().__init__(doc.words, engine="tesseract-json", raw=data)
 
     @classmethod
     def from_file(cls, path: Path | str) -> "TesseractOutput":
@@ -50,36 +54,6 @@ class TesseractOutput:
         except json.JSONDecodeError as exc:
             raise ValueError(f"input is not valid JSON ({exc})") from exc
         return cls(data)
-
-    @staticmethod
-    def _extract_words(data: dict[str, Any]) -> list[dict[str, Any]]:
-        """Extract a flat list of word records from various Tesseract JSON formats."""
-        if not isinstance(data, dict):
-            raise ValueError(
-                f"Tesseract output must be a JSON object, got {type(data).__name__}"
-            )
-
-        words: list[dict[str, Any]] = []
-
-        # Format 1: {"words": [{text, conf, bbox, alternatives}, ...]}
-        if "words" in data:
-            if not isinstance(data["words"], list):
-                raise ValueError("'words' must be a list of word objects")
-            return [w for w in data["words"] if isinstance(w, dict)]
-
-        # Format 2: {"pages": [{"words": [...]}]}
-        if "pages" in data:
-            for page in data.get("pages", []):
-                for word in page.get("words", []):
-                    if isinstance(word, dict):
-                        words.append(word)
-            return words
-
-        # Format 3: flat keys — treat whole JSON as one word
-        if "text" in data:
-            return [data]
-
-        return words
 
 
 class DocumentProcessor:
@@ -123,8 +97,8 @@ class DocumentProcessor:
     # Public API
     # ------------------------------------------------------------------
 
-    def process(self, tess_output: TesseractOutput) -> dict[str, Any]:
-        """Run the full pipeline on *tess_output*.
+    def process(self, tess_output: OCRDocument) -> dict[str, Any]:
+        """Run the full pipeline on *tess_output* (any :class:`~gurmukhifix.ocr.OCRDocument`).
 
         Returns a dict with keys:
           - corrected_text: str
@@ -267,37 +241,30 @@ class DocumentProcessor:
 
 
 def process_document(
-    tess_json: dict[str, Any] | str | Path,
+    source: dict[str, Any] | str | Path | OCRDocument | list[dict[str, Any]],
     language: str,
     output_dir: Path | str | None = None,
     store: Any = None,
+    fmt: str = "auto",
 ) -> dict[str, Any]:
-    """High-level function: process a Tesseract JSON document.
+    """High-level function: correct OCR output from any supported engine.
 
     Args:
-        tess_json: Tesseract JSON as a dict, a JSON string, or a file path.
+        source: OCR output — a dict/JSON string/file path (Tesseract JSON, TSV,
+            hOCR, ALTO, Surya, Google Vision), a plain-text string, a list of word
+            dicts, or an already-built :class:`~gurmukhifix.ocr.OCRDocument`.
         language: Target language/script.
         output_dir: If provided, write output artifacts to this directory.
         store: Optional CorrectionStore; its promoted corrections are applied.
+        fmt: OCR format hint; ``"auto"`` (default) detects it from the content or
+            file extension. See :mod:`gurmukhifix.ocr` for the supported values.
 
     Returns:
         Result dict (see DocumentProcessor.process).
     """
-    if isinstance(tess_json, Path):
-        tess_output = TesseractOutput.from_file(tess_json)
-    elif isinstance(tess_json, str):
-        # A leading '{' or '[' unambiguously marks raw JSON; otherwise treat the
-        # string as a filesystem path. This avoids the fragile reliance on
-        # Path.exists() raising OSError for long JSON strings.
-        if tess_json.lstrip()[:1] in ("{", "["):
-            tess_output = TesseractOutput.from_string(tess_json)
-        else:
-            tess_output = TesseractOutput.from_file(tess_json)
-    else:
-        tess_output = TesseractOutput(tess_json)
-
+    document = load_ocr(source, fmt=fmt)
     processor = DocumentProcessor(language, store=store)
-    result = processor.process(tess_output)
+    result = processor.process(document)
 
     if output_dir is not None:
         processor.write_outputs(result, output_dir)

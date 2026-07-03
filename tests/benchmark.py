@@ -1,285 +1,210 @@
-"""Accuracy Benchmark Script for gurmukhifix.
+"""Accuracy benchmark for gurmukhifix — honest, reproducible, on real Gurbani.
 
-Computes Character Error Rate (CER) and Word Error Rate (WER) for each
-supported script, comparing gurmukhifix-corrected output against ground truth.
+What this measures
+------------------
+Ground truth is **real verbatim scripture** (``tests/ground_truth/gurbani_sggs.txt``:
+300 lines of Sri Guru Granth Sahib Ji from the Shabad OS corpus). Into that clean
+text we inject a *documented, systematic* OCR error — the single most common
+Tesseract failure on Gurmukhi: a **word-initial sihari** (ਿ) emitted before its
+base consonant (its visual position) instead of after it (its Unicode order), e.g.
+``ਸਿਮਰਿ`` OCR'd as ``ਿਸਮਰਿ``. We then measure Character/Word Error Rate of the
+corrupted text (baseline) versus gurmukhifix's output, both against the truth.
 
-Usage:
-    python -m tests.benchmark [--ground-truth-dir tests/ground_truth]
+Honest scope
+------------
+* This is **synthetic error injection on real Gurbani text** — it measures how well
+  the engine reverses a known, targeted error class, not end-to-end accuracy on a
+  scanned manuscript. The latter needs a human-labelled scan corpus; drop paired
+  ``{"language","ocr","truth"}`` JSON files into ``tests/ground_truth/`` and they
+  are folded into the report automatically.
+* Lines with no injectable error are still run through the engine: their corrected
+  CER must stay **0.0** — proof the engine does not corrupt clean scripture.
+* Urdu/Farsi are experimental (structural-only) and carry **no accuracy claim**.
 
-Output: A Markdown table with CER/WER for baseline (raw Tesseract) vs
-        gurmukhifix-corrected output.
+Usage::
+
+    python -m tests.benchmark
 """
 
 from __future__ import annotations
 
+import argparse
 import json
+import random
+import unicodedata
 from pathlib import Path
 from typing import Any
 
-# ── Ground truth pairs ──────────────────────────────────────────────────────
-# Each entry: {"language": str, "ocr": str (raw Tesseract), "truth": str}
-GROUND_TRUTH: list[dict[str, Any]] = [
-    # Gurmukhi (10 samples)
-    {"language": "gurmukhi", "ocr": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ", "truth": "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ"},
-    {"language": "gurmukhi", "ocr": "ਵਾਹਿ ਗੁਰੂ", "truth": "ਵਾਹਿਗੁਰੂ"},
-    {"language": "gurmukhi", "ocr": "ਪੰਜਾਬੀ ਬੋਲੀ", "truth": "ਪੰਜਾਬੀ ਬੋਲੀ"},
-    {"language": "gurmukhi", "ocr": "ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ", "truth": "ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ"},
-    {"language": "gurmukhi", "ocr": "ਅੰਮ੍ਰਿਤਸਰ", "truth": "ਅੰਮ੍ਰਿਤਸਰ"},
-    {"language": "gurmukhi", "ocr": "ਭਾਈ ਗੁਰਦਾਸ", "truth": "ਭਾਈ ਗੁਰਦਾਸ"},
-    {"language": "gurmukhi", "ocr": "ਸਿੱਖ ਧਰਮ", "truth": "ਸਿੱਖ ਧਰਮ"},
-    {"language": "gurmukhi", "ocr": "ਨਾਨਕ ਨਾਮ", "truth": "ਨਾਨਕ ਨਾਮ"},
-    {"language": "gurmukhi", "ocr": "ਸੰਗਤ ਪੰਗਤ", "truth": "ਸੰਗਤ ਪੰਗਤ"},
-    {"language": "gurmukhi", "ocr": "ਖਾਲਸਾ ਪੰਥ", "truth": "ਖਾਲਸਾ ਪੰਥ"},
-    # Punjabi (10 samples)
-    {"language": "punjabi", "ocr": "ਪੰਜਾਬੀ ਭਾਸ਼ਾ", "truth": "ਪੰਜਾਬੀ ਭਾਸ਼ਾ"},
-    {"language": "punjabi", "ocr": "ਲਾਹੌਰ ਸ਼ਹਿਰ", "truth": "ਲਾਹੌਰ ਸ਼ਹਿਰ"},
-    {"language": "punjabi", "ocr": "ਗੱਲ ਕਰਨਾ", "truth": "ਗੱਲ ਕਰਨਾ"},
-    {"language": "punjabi", "ocr": "ਜੱਟ ਜ਼ਮੀਨ", "truth": "ਜੱਟ ਜ਼ਮੀਨ"},
-    {"language": "punjabi", "ocr": "ਪਿੰਡ ਵਾਲੇ", "truth": "ਪਿੰਡ ਵਾਲੇ"},
-    {"language": "punjabi", "ocr": "ਮਾਂ ਬੋਲੀ", "truth": "ਮਾਂ ਬੋਲੀ"},
-    {"language": "punjabi", "ocr": "ਸੱਭਿਆਚਾਰ", "truth": "ਸੱਭਿਆਚਾਰ"},
-    {"language": "punjabi", "ocr": "ਭੰਗੜਾ ਨਾਚ", "truth": "ਭੰਗੜਾ ਨਾਚ"},
-    {"language": "punjabi", "ocr": "ਕਿਸਾਨ ਵਰਗ", "truth": "ਕਿਸਾਨ ਵਰਗ"},
-    {"language": "punjabi", "ocr": "ਵਿਰਸਾ ਪੰਜਾਬ", "truth": "ਵਿਰਸਾ ਪੰਜਾਬ"},
-    # Hindi (10 samples)
-    {"language": "hindi", "ocr": "नमस्ते दुनिया", "truth": "नमस्ते दुनिया"},
-    {"language": "hindi", "ocr": "हिंदी भाषा", "truth": "हिंदी भाषा"},
-    {"language": "hindi", "ocr": "भारत देश", "truth": "भारत देश"},
-    {"language": "hindi", "ocr": "गांधी जी", "truth": "गांधी जी"},
-    {"language": "hindi", "ocr": "राष्ट्रीय ध्वज", "truth": "राष्ट्रीय ध्वज"},
-    {"language": "hindi", "ocr": "संविधान सभा", "truth": "संविधान सभा"},
-    {"language": "hindi", "ocr": "स्वतंत्रता दिवस", "truth": "स्वतंत्रता दिवस"},
-    {"language": "hindi", "ocr": "महात्मा गांधी", "truth": "महात्मा गांधी"},
-    {"language": "hindi", "ocr": "प्रधानमंत्री", "truth": "प्रधानमंत्री"},
-    {"language": "hindi", "ocr": "विश्वविद्यालय", "truth": "विश्वविद्यालय"},
-    # Urdu (10 samples)
-    {"language": "urdu", "ocr": "اردو زبان", "truth": "اردو زبان"},
-    {"language": "urdu", "ocr": "پاکستان ملک", "truth": "پاکستان ملک"},
-    {"language": "urdu", "ocr": "محبت کا پیغام", "truth": "محبت کا پیغام"},
-    {"language": "urdu", "ocr": "تاریخ قدیم", "truth": "تاریخ قدیم"},
-    {"language": "urdu", "ocr": "شاعری ادب", "truth": "شاعری ادب"},
-    {"language": "urdu", "ocr": "فلسفہ حکمت", "truth": "فلسفہ حکمت"},
-    {"language": "urdu", "ocr": "قلم کاغذ", "truth": "قلم کاغذ"},
-    {"language": "urdu", "ocr": "آزادی حقوق", "truth": "آزادی حقوق"},
-    {"language": "urdu", "ocr": "ہندوستان ملک", "truth": "ہندوستان ملک"},
-    {"language": "urdu", "ocr": "سیاست حکومت", "truth": "سیاست حکومت"},
-    # Farsi (10 samples)
-    {"language": "farsi", "ocr": "زبان فارسی", "truth": "زبان فارسی"},
-    {"language": "farsi", "ocr": "ایران کشور", "truth": "ایران کشور"},
-    {"language": "farsi", "ocr": "شعر ادبیات", "truth": "شعر ادبیات"},
-    {"language": "farsi", "ocr": "تاریخ باستان", "truth": "تاریخ باستان"},
-    {"language": "farsi", "ocr": "فرهنگ هنر", "truth": "فرهنگ هنر"},
-    {"language": "farsi", "ocr": "دانشگاه علم", "truth": "دانشگاه علم"},
-    {"language": "farsi", "ocr": "کتاب مطالعه", "truth": "کتاب مطالعه"},
-    {"language": "farsi", "ocr": "موسیقی هنر", "truth": "موسیقی هنر"},
-    {"language": "farsi", "ocr": "پزشکی سلامت", "truth": "پزشکی سلامت"},
-    {"language": "farsi", "ocr": "آموزش پرورش", "truth": "آموزش پرورش"},
-    # ── OCR-error samples ────────────────────────────────────────────────────
-    # These contain a real, systematic Tesseract failure that the engine must
-    # repair: the sihari (ਿ) is emitted *before* its base consonant (its visual
-    # position) instead of after it (its Unicode order). gurmukhifix should reorder
-    # it, lowering CER below the raw-OCR baseline.
-    {"language": "gurmukhi", "ocr": "ਿਸੱਖ ਧਰਮ", "truth": "ਸਿੱਖ ਧਰਮ"},
-    {"language": "gurmukhi", "ocr": "ਿਪੰਡ ਵਾਲੇ", "truth": "ਪਿੰਡ ਵਾਲੇ"},
-    {"language": "gurmukhi", "ocr": "ਿਦਨ ਰਾਤ", "truth": "ਦਿਨ ਰਾਤ"},
-    {"language": "punjabi", "ocr": "ਿਕਸਾਨ ਵਰਗ", "truth": "ਕਿਸਾਨ ਵਰਗ"},
-    {"language": "punjabi", "ocr": "ਿਦਲ ਦੀ", "truth": "ਦਿਲ ਦੀ"},
-    # Nukta emitted *after* the vowel sign instead of before it (canonical order
-    # is consonant + nukta + vowel). gurmukhifix reorders it.
-    {"language": "gurmukhi", "ocr": "ਖਾ਼ਸ ਗੱਲ", "truth": "ਖ਼ਾਸ ਗੱਲ"},
-    {"language": "punjabi", "ocr": "ਭਾਸਾ਼ ਬੋਲੀ", "truth": "ਭਾਸ਼ਾ ਬੋਲੀ"},
-]
+import regex
+
+from gurmukhifix.integration import process_document
+
+_GT_DIR = Path(__file__).parent / "ground_truth"
+_SIHARI = "ਿ"
+_GURMUKHI_CONSONANT = regex.compile(r"[ਕ-ਹਖ਼-ਫ਼]")
+
+# Real truth-only corpora: filename -> language.
+_CORPORA = {"gurbani_sggs.txt": "gurmukhi"}
 
 
-# ── Metric functions ─────────────────────────────────────────────────────────
+# ── Metrics ─────────────────────────────────────────────────────────────────
 
-def _edit_distance(a: str, b: str) -> int:
-    """Compute the Levenshtein edit distance between two strings."""
+
+def _edit_distance(a: "list[Any] | str", b: "list[Any] | str") -> int:
     if a == b:
         return 0
     la, lb = len(a), len(b)
-    if la == 0:
-        return lb
-    if lb == 0:
-        return la
+    if la == 0 or lb == 0:
+        return la or lb
     prev = list(range(lb + 1))
     for i, ca in enumerate(a, 1):
         curr = [i] + [0] * lb
         for j, cb in enumerate(b, 1):
-            curr[j] = min(
-                prev[j] + 1,
-                curr[j - 1] + 1,
-                prev[j - 1] + (0 if ca == cb else 1),
-            )
+            curr[j] = min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + (0 if ca == cb else 1))
         prev = curr
     return prev[lb]
 
 
-def character_error_rate(hypothesis: str, reference: str) -> float:
-    """CER = edit_distance(hyp, ref) / len(ref)."""
-    if not reference:
-        return 0.0
-    return _edit_distance(hypothesis, reference) / len(reference)
+def character_error_rate(hyp: str, ref: str) -> float:
+    return 0.0 if not ref else _edit_distance(hyp, ref) / len(ref)
 
 
-def word_error_rate(hypothesis: str, reference: str) -> float:
-    """WER = edit_distance(hyp_words, ref_words) / len(ref_words)."""
-    ref_words = reference.split()
-    hyp_words = hypothesis.split()
-    if not ref_words:
-        return 0.0
-    return _edit_distance(hyp_words, ref_words) / len(ref_words)  # type: ignore[arg-type]
+def word_error_rate(hyp: str, ref: str) -> float:
+    ref_w, hyp_w = ref.split(), hyp.split()
+    return 0.0 if not ref_w else _edit_distance(hyp_w, ref_w) / len(ref_w)
 
 
-# ── Benchmark runner ─────────────────────────────────────────────────────────
+# ── Documented OCR-error injection ──────────────────────────────────────────
 
-def run_benchmark(
-    ground_truth: list[dict[str, Any]] | None = None,
-    ground_truth_dir: Path | str | None = None,
-) -> dict[str, Any]:
-    """Run the benchmark and return per-language CER/WER metrics.
 
-    Args:
-        ground_truth: List of {"language", "ocr", "truth"} dicts.
-        ground_truth_dir: Directory of JSON files following the same schema.
+def inject_word_initial_sihari(text: str) -> tuple[str, int]:
+    """Simulate the word-initial-sihari Tesseract error; return (ocr_text, n_errors).
+
+    For each word beginning consonant + sihari (the correct Unicode order), emit
+    the sihari first (its visual position) — the exact systematic misrecognition
+    the engine is built to reverse.
     """
-    from gurmukhifix.integration import process_document
+    out_words: list[str] = []
+    n = 0
+    for word in text.split(" "):
+        if (
+            len(word) >= 2
+            and _GURMUKHI_CONSONANT.match(word[0])
+            and word[1] == _SIHARI
+        ):
+            out_words.append(_SIHARI + word[0] + word[2:])
+            n += 1
+        else:
+            out_words.append(word)
+    return " ".join(out_words), n
 
-    if ground_truth is None:
-        ground_truth = []
 
-    if ground_truth_dir is not None:
-        for f in sorted(Path(ground_truth_dir).glob("*.json")):
-            with f.open(encoding="utf-8") as fh:
-                entries = json.load(fh)
-                if isinstance(entries, list):
-                    ground_truth.extend(entries)
+# ── Runner ──────────────────────────────────────────────────────────────────
 
-    if not ground_truth:
-        ground_truth = GROUND_TRUTH
 
-    results: dict[str, dict[str, list[float]]] = {}
+def _load_pairs() -> list[dict[str, Any]]:
+    """Build (language, ocr, truth) samples from real corpora + any paired JSON."""
+    pairs: list[dict[str, Any]] = []
 
-    for entry in ground_truth:
-        lang = entry["language"]
-        ocr_text: str = entry["ocr"]
-        truth: str = entry["truth"]
+    for filename, language in _CORPORA.items():
+        path = _GT_DIR / filename
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            truth = unicodedata.normalize("NFC", line.strip())
+            if not truth:
+                continue
+            ocr, n = inject_word_initial_sihari(truth)
+            pairs.append({"language": language, "ocr": ocr, "truth": truth, "injected": n})
 
-        if lang not in results:
-            results[lang] = {"baseline_cer": [], "corrected_cer": [], "baseline_wer": [], "corrected_wer": []}
+    # Real human-labelled scan samples, if any were dropped in.
+    for path in sorted(_GT_DIR.glob("*.json")):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        for entry in data if isinstance(data, list) else []:
+            entry.setdefault("injected", 1)
+            pairs.append(entry)
 
-        # Baseline (raw Tesseract OCR — no correction)
-        baseline_cer = character_error_rate(ocr_text, truth)
-        baseline_wer = word_error_rate(ocr_text, truth)
+    return pairs
 
-        # Corrected
-        tess_data = {"words": [{"text": w, "conf": 70.0, "bbox": [], "alternatives": []} for w in ocr_text.split()]}
-        result = process_document(tess_data, lang)
-        corrected_text = result["corrected_text"]
-        corrected_cer = character_error_rate(corrected_text, truth)
-        corrected_wer = word_error_rate(corrected_text, truth)
 
-        results[lang]["baseline_cer"].append(baseline_cer)
-        results[lang]["corrected_cer"].append(corrected_cer)
-        results[lang]["baseline_wer"].append(baseline_wer)
-        results[lang]["corrected_wer"].append(corrected_wer)
+def run_benchmark() -> dict[str, Any]:
+    per_lang: dict[str, dict[str, list[float]]] = {}
+    for entry in _load_pairs():
+        lang, ocr, truth = entry["language"], entry["ocr"], entry["truth"]
+        injected = entry.get("injected", 0)
+        bucket = per_lang.setdefault(
+            lang,
+            {"base_cer": [], "corr_cer": [], "base_wer": [], "corr_wer": [],
+             "err_base_cer": [], "err_corr_cer": [], "clean_corr_cer": []},
+        )
+        corrected = process_document(ocr, lang)["corrected_text"]
+        b_cer, c_cer = character_error_rate(ocr, truth), character_error_rate(corrected, truth)
+        bucket["base_cer"].append(b_cer)
+        bucket["corr_cer"].append(c_cer)
+        bucket["base_wer"].append(word_error_rate(ocr, truth))
+        bucket["corr_wer"].append(word_error_rate(corrected, truth))
+        (bucket["err_base_cer"] if injected else bucket["clean_corr_cer"]).append(b_cer if injected else c_cer)
+        if injected:
+            bucket["err_corr_cer"].append(c_cer)
+
+    def avg(xs: list[float]) -> float:
+        return sum(xs) / len(xs) if xs else 0.0
 
     summary: dict[str, Any] = {}
-    for lang, metrics in results.items():
-        n = len(metrics["baseline_cer"])
-        avg_baseline_cer = sum(metrics["baseline_cer"]) / n
-        avg_corrected_cer = sum(metrics["corrected_cer"]) / n
-        avg_baseline_wer = sum(metrics["baseline_wer"]) / n
-        avg_corrected_wer = sum(metrics["corrected_wer"]) / n
-        cer_improvement = (
-            (avg_baseline_cer - avg_corrected_cer) / avg_baseline_cer * 100
-            if avg_baseline_cer > 0
-            else 0.0
-        )
+    for lang, m in per_lang.items():
+        n = len(m["base_cer"])
+        base_cer, corr_cer = avg(m["base_cer"]), avg(m["corr_cer"])
         summary[lang] = {
             "samples": n,
-            "baseline_cer": round(avg_baseline_cer, 4),
-            "corrected_cer": round(avg_corrected_cer, 4),
-            "cer_improvement_pct": round(cer_improvement, 2),
-            "baseline_wer": round(avg_baseline_wer, 4),
-            "corrected_wer": round(avg_corrected_wer, 4),
+            "with_errors": len(m["err_corr_cer"]),
+            "baseline_cer": round(base_cer, 4),
+            "corrected_cer": round(corr_cer, 4),
+            "cer_improvement_pct": round((base_cer - corr_cer) / base_cer * 100, 2) if base_cer else 0.0,
+            "baseline_wer": round(avg(m["base_wer"]), 4),
+            "corrected_wer": round(avg(m["corr_wer"]), 4),
+            "error_subset_baseline_cer": round(avg(m["err_base_cer"]), 4),
+            "error_subset_corrected_cer": round(avg(m["err_corr_cer"]), 4),
+            "clean_subset_corrupted": round(avg(m["clean_corr_cer"]), 6),  # must be 0.0
         }
-
     return summary
 
 
 def print_table(summary: dict[str, Any]) -> None:
-    """Print a Markdown table of benchmark results."""
-    header = "| Language | Samples | Baseline CER | Corrected CER | CER Improvement | Baseline WER | Corrected WER |"
-    sep =    "|----------|---------|--------------|---------------|-----------------|--------------|---------------|"
-    print(header)
-    print(sep)
+    print("| Language | Samples | w/ errors | Baseline CER | Corrected CER | CER Δ | Clean-text corrupted? |")
+    print("|----------|--------:|----------:|-------------:|--------------:|------:|----------------------:|")
     for lang, m in summary.items():
+        corrupted = "none ✓" if m["clean_subset_corrupted"] == 0 else f"{m['clean_subset_corrupted']:.4f} ✗"
         print(
-            f"| {lang:<8} | {m['samples']:>7} | "
-            f"{m['baseline_cer']:.4f}       | "
-            f"{m['corrected_cer']:.4f}         | "
-            f"{m['cer_improvement_pct']:>+.1f}%           | "
-            f"{m['baseline_wer']:.4f}       | "
-            f"{m['corrected_wer']:.4f}         |"
+            f"| {lang} | {m['samples']} | {m['with_errors']} | {m['baseline_cer']:.4f} | "
+            f"{m['corrected_cer']:.4f} | {m['cer_improvement_pct']:+.1f}% | {corrupted} |"
         )
 
 
 def main() -> int:
-    """Run the benchmark and return a process exit code.
-
-    The hard CI gate is **no regression**: gurmukhifix must never raise the
-    character error rate of any script above the raw-Tesseract baseline. A
-    positive average improvement is the aspirational target and is reported but
-    not required (the bundled ground truth is mostly already-clean text).
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser(description="gurmukhifix accuracy benchmark")
-    parser.add_argument(
-        "--ground-truth-dir",
-        default=str(Path(__file__).parent / "ground_truth"),
-        help="Directory containing ground truth JSON files.",
-    )
-    parser.add_argument(
-        "--target",
-        type=float,
-        default=15.0,
-        help="Aspirational average CER improvement target, in percent.",
-    )
-    args = parser.parse_args()
-
-    print("Running benchmark …\n")
-    summary = run_benchmark(ground_truth_dir=args.ground_truth_dir)
+    """Run the benchmark. Hard gates: no CER regression, and zero clean-text corruption."""
+    argparse.ArgumentParser(description="gurmukhifix accuracy benchmark").parse_args()
+    print("Running benchmark on real Gurbani with injected word-initial-sihari OCR errors …\n")
+    summary = run_benchmark()
     print_table(summary)
-    print()
+    print("\nReproduce: python -m tests.benchmark")
+    print("Scope: synthetic injection of a documented Tesseract error class on real")
+    print("SGGS text — not end-to-end scan accuracy. See tests/benchmark.py docstring.\n")
 
-    # Hard gate: fail on any per-language regression (corrected worse than raw).
-    regressions = [
-        lang
-        for lang, m in summary.items()
-        if m["corrected_cer"] > m["baseline_cer"] + 1e-9
-    ]
-
-    improvements = [m["cer_improvement_pct"] for m in summary.values()]
-    avg_improvement = sum(improvements) / len(improvements) if improvements else 0.0
-    print(f"Average CER improvement: {avg_improvement:+.1f}%")
-
+    regressions = [l for l, m in summary.items() if m["corrected_cer"] > m["baseline_cer"] + 1e-9]
+    corruptions = [l for l, m in summary.items() if m["clean_subset_corrupted"] > 1e-9]
     if regressions:
-        print(
-            "✗ REGRESSION: gurmukhifix increased CER for: "
-            + ", ".join(sorted(regressions))
-        )
+        print("✗ REGRESSION (corrected worse than raw OCR): " + ", ".join(sorted(regressions)))
         return 1
-
-    print("✓ No regression: gurmukhifix never increased CER over raw Tesseract.")
-    if avg_improvement >= args.target:
-        print(f"✓ Meets {args.target:.0f}% average CER improvement target.")
-    else:
-        print(
-            f"• Below the {args.target:.0f}% aspirational improvement target "
-            "(informational only)."
-        )
+    if corruptions:
+        print("✗ CORRUPTION (clean scripture altered): " + ", ".join(sorted(corruptions)))
+        return 1
+    print("✓ No regression and no clean-text corruption on any script.")
+    for lang, m in summary.items():
+        if m["with_errors"]:
+            print(
+                f"  {lang}: on {m['with_errors']} lines with injected errors, "
+                f"CER {m['error_subset_baseline_cer']:.4f} → {m['error_subset_corrected_cer']:.4f}"
+            )
     return 0
 
 
