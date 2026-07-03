@@ -1,8 +1,8 @@
 # gurmukhifix
 
 [![CI](https://github.com/jsdosanj/gurmukhifix/actions/workflows/ci.yml/badge.svg)](https://github.com/jsdosanj/gurmukhifix/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/gurmukhifix)](https://pypi.org/project/gurmukhifix/)
-![Python](https://img.shields.io/pypi/pyversions/gurmukhifix)
+[![PyPI](https://img.shields.io/pypi/v/gurmukhifix?logo=pypi&logoColor=white)](https://pypi.org/project/gurmukhifix/)
+![Python](https://img.shields.io/pypi/pyversions/gurmukhifix?logo=python&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 > **Safe, evidence-gated OCR correction for Gurmukhi and other Indic scripts.**
