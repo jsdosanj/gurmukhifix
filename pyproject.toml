@@ -40,6 +40,9 @@ nlp = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "hypothesis>=6.0",
+    "mypy>=1.8",
+    "ruff>=0.4",
 ]
 
 [project.scripts]
@@ -56,4 +59,4 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 
 [tool.setuptools.package-data]
-gurmukhifix = ["py.typed", "configs/*.yaml"]
+gurmukhifix = ["py.typed", "configs/*.yaml", "data/*.gz", "data/*.md", "samples/*.json"]

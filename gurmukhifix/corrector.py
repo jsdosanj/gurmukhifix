@@ -22,6 +22,8 @@ from typing import Any
 import regex
 
 from .config import load_config as _load_config
+from .evidence import BLOCKING_REASONS, EvidenceGate
+from .lexicon import Lexicon
 from .validator import ScriptValidator
 
 
@@ -30,14 +32,43 @@ def _normalize(text: str, form: str = "NFC") -> str:
     return unicodedata.normalize(form, text)
 
 
+class _PromotedRule:
+    """A corpus-learned, human-confirmed correction, optionally scoped to a context."""
+
+    __slots__ = ("wrong", "correct", "context_before", "context_after")
+
+    def __init__(self, wrong: str, correct: str, context_before: str = "", context_after: str = "") -> None:
+        self.wrong = wrong
+        self.correct = correct
+        self.context_before = context_before
+        self.context_after = context_after
+
+    @property
+    def has_context(self) -> bool:
+        return bool(self.context_before or self.context_after)
+
+    def context_matches(self, text: str, start: int) -> bool:
+        """Whether the confirmed context surrounds the match at *start* in *text*."""
+        if not self.has_context:
+            return False
+        before = text[:start]
+        after = text[start + len(self.wrong):]
+        if self.context_before and not before.endswith(self.context_before):
+            return False
+        if self.context_after and not after.startswith(self.context_after):
+            return False
+        return True
+
+
 class CharacterCorrector:
     """Applies confusion-pair and diacritic corrections for a given script."""
 
     def __init__(
         self,
         language: str,
-        promoted: list[tuple[str, str]] | None = None,
+        promoted: list[tuple[str, str]] | list[dict[str, Any]] | None = None,
         validator: ScriptValidator | None = None,
+        lexicon: Lexicon | None = None,
     ) -> None:
         self.language = language
         self.config = _load_config(language)
@@ -72,18 +103,18 @@ class CharacterCorrector:
         ] + [(k, v, "diacritic_pair") for k, v in self._diacritic_map.items()]
         self._candidates.sort(key=lambda t: len(t[0]), reverse=True)
 
-        # Corpus-learned, human-confirmed pairs promoted by the learner. Unlike
-        # the built-in pairs (which need a validity *improvement* to fire), these
-        # carry external evidence, so they apply on equal-or-better validity.
-        self._promoted: list[tuple[str, str]] = [
-            (_normalize(w, self.norm_form), _normalize(c, self.norm_form))
-            for w, c in (promoted or [])
-            if w and _normalize(w, self.norm_form) != _normalize(c, self.norm_form)
-        ]
+        # Corpus-learned, human-confirmed corrections promoted by the learner.
+        # Each may carry the context in which it was confirmed. They are still run
+        # through the evidence gate (never touch scripture, never worsen validity);
+        # a matching confirmed context counts as the positive evidence that lets a
+        # same-validity swap apply.
+        self._promoted_rules: list[_PromotedRule] = self._build_promoted_rules(promoted)
 
-        # Validator used to score the badness of candidate corrections. Shared
-        # with the rest of the pipeline when injected, to avoid rebuilding it.
+        # Validator + lexicon shared with the rest of the pipeline when injected,
+        # to avoid rebuilding them per module.
         self._validator = validator or ScriptValidator(language)
+        self._lexicon = lexicon if lexicon is not None else Lexicon(language)
+        self._gate = EvidenceGate(self._validator, self._lexicon)
 
     # ------------------------------------------------------------------
     # Public API
@@ -104,41 +135,46 @@ class CharacterCorrector:
         text = _normalize(text, self.norm_form)
         corrections: list[dict[str, Any]] = []
 
-        # 1. Corpus-learned promoted corrections (applied on equal-or-better
-        #    validity — they carry external human evidence).
+        # 1. Corpus-learned promoted corrections (gated: never touch a locked
+        #    scripture word, never worsen validity; a confirmed context or a
+        #    dictionary hit is the evidence that authorises a same-validity swap).
         text = self._apply_promoted(text, corrections)
 
         if not self._candidates:
             return text, corrections
 
-        # 2. Built-in confusion/diacritic repair, evidence-gated on a strict
-        #    validity improvement. `base` is carried forward across iterations
-        #    instead of recomputed, and only keys actually present in the text
-        #    are scanned — each accepted substitution strictly lowers badness, so
-        #    the loop terminates; the cap is a defensive backstop only.
-        base = self._validator.badness(text)
+        # 2. Built-in confusion/diacritic repair, evidence-gated word by word by
+        #    :class:`~gurmukhifix.evidence.EvidenceGate`. A substitution is accepted
+        #    only if it strictly lowers script-validity badness OR turns a non-word
+        #    into a known dictionary word, and never on a locked scripture word.
+        #    Each accepted edit strictly reduces either badness or the non-word
+        #    count, so the loop terminates; the cap is a defensive backstop only.
         max_iterations = len(text) + 8
         for _ in range(max_iterations):
-            if base <= 0:
-                break  # already well-formed — no evidence to correct against
+            base = self._validator.badness(text)
+            # Fast path: an already-valid, known word carries no evidence to change.
+            if base <= 0 and self._lexicon.is_word(text):
+                break
 
-            best: tuple[float, int, str, str, str, float] | None = None
+            best: tuple[tuple[int, float], int, str, str, str] | None = None
             for key, repl, rule in self._candidates:
                 start = text.find(key)
-                if start == -1:
-                    continue  # cheap pre-filter: key not present at all
                 while start != -1:
                     candidate = text[:start] + repl + text[start + len(key):]
-                    cand_badness = self._validator.badness(candidate)
-                    delta = base - cand_badness
-                    if delta > 0 and (best is None or delta > best[0]):
-                        best = (delta, start, key, repl, rule, cand_badness)
+                    verdict = self._gate.judge_edit(text, candidate, start)
+                    if verdict.allowed:
+                        delta = base - self._validator.badness(candidate)
+                        # Prefer validity-improving edits (delta > 0) over
+                        # lexicon-only edits (delta == 0); ties keep the first found.
+                        rank = (1 if delta > 0 else 0, delta)
+                        if best is None or rank > best[0]:
+                            best = (rank, start, key, repl, rule)
                     start = text.find(key, start + 1)
 
             if best is None:
-                break  # no substitution provides positive evidence — stop guessing
+                break  # no permitted substitution — stop guessing
 
-            _, pos, key, repl, rule, base = best
+            _, pos, key, repl, rule = best
             corrections.append(
                 {"original": key, "corrected": repl, "rule": rule, "position": pos}
             )
@@ -149,12 +185,23 @@ class CharacterCorrector:
     def _apply_promoted(
         self, text: str, corrections: list[dict[str, Any]]
     ) -> str:
-        """Apply promoted corrections that don't worsen validity."""
-        for wrong, correct in self._promoted:
+        """Apply promoted corrections through the evidence gate.
+
+        Scripture-locked words and validity-worsening edits are always refused; an
+        otherwise-permitted edit applies either on gate evidence (validity/lexicon)
+        or when the correction's confirmed context surrounds the match.
+        """
+        for promoted in self._promoted_rules:
+            wrong, correct = promoted.wrong, promoted.correct
             start = text.find(wrong)
             while start != -1:
                 candidate = text[:start] + correct + text[start + len(wrong):]
-                if self._validator.badness(candidate) <= self._validator.badness(text):
+                verdict = self._gate.judge_edit(text, candidate, start)
+                if verdict.reason in BLOCKING_REASONS:
+                    accept = False
+                else:
+                    accept = verdict.allowed or promoted.context_matches(text, start)
+                if accept:
                     corrections.append(
                         {
                             "original": wrong,
@@ -168,6 +215,25 @@ class CharacterCorrector:
                 else:
                     start = text.find(wrong, start + 1)
         return text
+
+    def _build_promoted_rules(
+        self, promoted: list[tuple[str, str]] | list[dict[str, Any]] | None
+    ) -> list[_PromotedRule]:
+        """Normalise promoted input (legacy tuples or context-carrying dicts)."""
+        rules: list[_PromotedRule] = []
+        for item in promoted or []:
+            if isinstance(item, dict):
+                wrong = _normalize(item.get("original_sequence", ""), self.norm_form)
+                correct = _normalize(item.get("corrected_sequence", ""), self.norm_form)
+                cb = _normalize(item.get("context_before", "") or "", self.norm_form)
+                ca = _normalize(item.get("context_after", "") or "", self.norm_form)
+            else:
+                wrong = _normalize(item[0], self.norm_form)
+                correct = _normalize(item[1], self.norm_form)
+                cb = ca = ""
+            if wrong and wrong != correct:
+                rules.append(_PromotedRule(wrong, correct, cb, ca))
+        return rules
 
     def validate_sequences(self, text: str) -> list[dict[str, Any]]:
         """Check *text* for impossible sequences defined in the config.

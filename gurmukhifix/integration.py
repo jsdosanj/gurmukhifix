@@ -17,6 +17,7 @@ from typing import Any
 
 from .corrector import CharacterCorrector
 from .diacritic import DiacriticRecovery
+from .lexicon import Lexicon
 from .ligature import LigatureHandler
 from .validator import ScriptValidator
 
@@ -86,20 +87,37 @@ class DocumentProcessor:
 
     def __init__(self, language: str, store: Any = None) -> None:
         self.language = language
-        # One validator shared across the pipeline (avoids building it 3x).
+        # One validator + lexicon shared across the pipeline (avoids rebuilding).
         self._validator = ScriptValidator(language)
-        # Corpus-learned promoted corrections, if a CorrectionStore is provided.
-        promoted = store.get_promoted_pairs(language) if store is not None else None
+        self._lexicon = Lexicon(language)
+        # Corpus-learned promoted corrections, with the context in which each was
+        # confirmed, if a CorrectionStore is provided.
+        promoted = store.get_promoted_rules(language) if store is not None else None
         self._corrector = CharacterCorrector(
-            language, promoted=promoted, validator=self._validator
+            language, promoted=promoted, validator=self._validator, lexicon=self._lexicon
         )
         self._ligature = LigatureHandler(language)
-        self._diacritic = DiacriticRecovery(language, validator=self._validator)
+        self._diacritic = DiacriticRecovery(
+            language, validator=self._validator, lexicon=self._lexicon
+        )
 
         cfg = self._corrector.config
         thresholds = cfg.get("confidence_thresholds", {})
         self._pass_through: float = thresholds.get("pass_through", DEFAULT_PASS_THROUGH)
         self._flag_only: float = thresholds.get("flag_only", DEFAULT_FLAG_ONLY)
+
+    def _run_pass(
+        self,
+        fn: Any,
+        text: str,
+        corrections: list[dict[str, Any]],
+    ) -> tuple[str, list[dict[str, Any]]]:
+        """Apply one correction pass, keeping it only if it does not worsen validity."""
+        before = self._validator.badness(text)
+        new_text, new_corrections = fn(text)
+        if new_text != text and self._validator.badness(new_text) > before:
+            return text, corrections  # this pass regressed validity — discard it
+        return new_text, corrections + new_corrections
 
     # ------------------------------------------------------------------
     # Public API
@@ -162,28 +180,22 @@ class DocumentProcessor:
                 continue
 
             # --- Full correction pipeline (60–85% confidence band) ---
-            original_text = text
-            original_badness = self._validator.badness(text)
+            # Each pass is gated independently: a pass that would make the word
+            # *less* well-formed than it was before that pass is discarded on its
+            # own, so a correct earlier fix is never thrown away because a later,
+            # unrelated pass regressed. gurmukhifix must never make Tesseract worse.
             corrections_for_word: list[dict[str, Any]] = []
-
-            # Step 1: character correction
-            text, c = self._corrector.correct(text)
-            corrections_for_word.extend(c)
-
-            # Step 2: ligature reassembly
-            text, c = self._ligature.reassemble(text)
-            corrections_for_word.extend(c)
-
-            # Step 3: diacritic recovery
-            text, c = self._diacritic.recover(text, alternatives)
-            corrections_for_word.extend(c)
-
-            # Safety net: the corrected word must never be *less* well-formed than
-            # the raw OCR. If the combined passes regressed validity, discard them
-            # and keep the original — gurmukhifix must not make Tesseract worse.
-            if text != original_text and self._validator.badness(text) > original_badness:
-                text = original_text
-                corrections_for_word = []
+            text, corrections_for_word = self._run_pass(
+                self._corrector.correct, text, corrections_for_word
+            )
+            text, corrections_for_word = self._run_pass(
+                self._ligature.reassemble, text, corrections_for_word
+            )
+            text, corrections_for_word = self._run_pass(
+                lambda t: self._diacritic.recover(t, alternatives),
+                text,
+                corrections_for_word,
+            )
 
             # Step 4: validation
             violations = self._validator.validate(text)

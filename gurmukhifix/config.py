@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import copy
 import functools
+import json
 from pathlib import Path
 from typing import Any
 
@@ -38,8 +39,43 @@ def _read_raw(language: str) -> dict[str, Any]:
         return yaml.safe_load(fh) or {}
 
 
+# How to identify a rule for dedup purposes — by the fields that define its
+# *behaviour*, so two entries that only differ in an annotation like ``note`` are
+# still recognised as the same correction candidate.
+_IDENTITY = {
+    "confusion_pairs": lambda r: ("wc", r.get("wrong"), r.get("correct")),
+    "diacritic_pairs": lambda r: ("wc", r.get("wrong"), r.get("correct")),
+    "ligature_rules": lambda r: ("bj", r.get("broken"), r.get("joined")),
+    "impossible_sequences": lambda r: ("p", r.get("pattern")),
+}
+
+
+def _dedup(key: str, items: list[Any]) -> list[Any]:
+    """Drop duplicate rules, preserving first occurrence.
+
+    A child config that ``extends`` a parent should not re-list the parent's rules
+    (e.g. ``punjabi`` re-listing every ``gurmukhi`` confusion pair): concatenating
+    then produces duplicate correction *candidates*, wasting work and skewing any
+    frequency-based tie-break. Deduping by behavioural identity makes ``extends``
+    idempotent no matter what a config author lists.
+    """
+    identity = _IDENTITY.get(key)
+    seen: set[Any] = set()
+    out: list[Any] = []
+    for item in items:
+        if identity is not None and isinstance(item, dict):
+            marker: Any = identity(item)
+        else:
+            marker = json.dumps(item, sort_keys=True, ensure_ascii=False)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        out.append(item)
+    return out
+
+
 def _merge(parent: dict[str, Any], child: dict[str, Any]) -> dict[str, Any]:
-    """Merge *child* onto *parent*: list rules concatenate, scalars override."""
+    """Merge *child* onto *parent*: list rules concatenate (deduped), scalars override."""
     merged = copy.deepcopy(parent)
     for key, value in child.items():
         if key == "extends":
@@ -49,7 +85,7 @@ def _merge(parent: dict[str, Any], child: dict[str, Any]) -> dict[str, Any]:
             and isinstance(value, list)
             and isinstance(parent.get(key), list)
         ):
-            merged[key] = copy.deepcopy(parent[key]) + copy.deepcopy(value)
+            merged[key] = _dedup(key, copy.deepcopy(parent[key]) + copy.deepcopy(value))
         else:
             merged[key] = copy.deepcopy(value)
     return merged

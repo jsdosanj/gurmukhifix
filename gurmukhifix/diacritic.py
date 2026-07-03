@@ -13,17 +13,25 @@ from typing import Any
 import regex
 
 from .config import load_config as _load_config
+from .evidence import EvidenceGate
+from .lexicon import Lexicon
 from .validator import ScriptValidator
 
 
 class DiacriticRecovery:
     """Recovers dropped or misplaced diacritics for a given script."""
 
-    def __init__(self, language: str, validator: ScriptValidator | None = None) -> None:
+    def __init__(
+        self,
+        language: str,
+        validator: ScriptValidator | None = None,
+        lexicon: Lexicon | None = None,
+    ) -> None:
         self.language = language
         self.config = _load_config(language)
         self.norm_form: str = self.config.get("normalization", "NFC")
         self._validator = validator or ScriptValidator(language)
+        self._gate = EvidenceGate(self._validator, lexicon)
 
     # ------------------------------------------------------------------
     # Public API
@@ -57,8 +65,13 @@ class DiacriticRecovery:
             corrections.extend(c)
 
         if self.language in ("urdu", "farsi"):
-            text, c = self._recover_hamza_carrier(text)
-            corrections.extend(c)
+            candidate, c = self._recover_hamza_carrier(text)
+            # The hamza rewrite substitutes codepoints, so it must clear the
+            # evidence gate: it applies only on a strict validity gain or a
+            # dictionary hit, never silently on already-valid Arabic-script text.
+            if candidate != text and self._gate.judge_word(text, candidate).allowed:
+                text = candidate
+                corrections.extend(c)
 
         # Nukta recovery from Tesseract alternatives
         if alternatives:

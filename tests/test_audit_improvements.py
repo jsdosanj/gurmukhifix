@@ -16,12 +16,45 @@ from gurmukhifix.validator import ScriptValidator
 class TestPromotedFeedback:
     """Promoted, corpus-learned corrections must reach the corrector."""
 
-    def test_promoted_pair_is_applied(self) -> None:
-        # A same-class swap that evidence-gating alone would never make.
+    def test_promoted_pair_refused_on_scripture(self) -> None:
+        # ਕਾਲ is verbatim Gurbani — a promoted swap must never silently rewrite it.
         c = CharacterCorrector("gurmukhi", promoted=[("ਕ", "ਖ")])
         out, corrections = c.correct("ਕਾਲ")
-        assert out == "ਖਾਲ"
-        assert any(x["rule"] == "promoted_correction" for x in corrections)
+        assert out == "ਕਾਲ"
+        assert corrections == []
+
+    def test_promoted_pair_applies_with_confirmed_context(self) -> None:
+        # A promotion confirmed in a specific context applies there, on a
+        # non-scripture token, even at unchanged validity — the human confirmation
+        # is the evidence that authorises a same-class swap.
+        rules = [
+            {
+                "original_sequence": "ਬ",
+                "corrected_sequence": "ਭ",
+                "context_before": "ਕੁ",
+                "context_after": "",
+            }
+        ]
+        c = CharacterCorrector("gurmukhi", promoted=rules)
+        out, corrections = c.correct("ਕੁਬ")  # confirmed context ਕੁ_ present
+        # The confirmed-context promotion fires (ਬ -> ਭ). Downstream lexicon-gated
+        # passes may legitimately refine the token further, so assert on the
+        # recorded promoted correction rather than the exact final string.
+        assert any(
+            x["rule"] == "promoted_correction"
+            and x["original"] == "ਬ"
+            and x["corrected"] == "ਭ"
+            for x in corrections
+        )
+        assert "ਭ" in out
+
+    def test_promoted_swap_refused_without_evidence(self) -> None:
+        # No confirmed context, no dictionary/validity gain: a blind same-validity
+        # swap on clean text is refused rather than guessed at.
+        c = CharacterCorrector("gurmukhi", promoted=[("ਬ", "ਭ")])
+        out, corrections = c.correct("ਕੁਬ")
+        assert out == "ਕੁਬ"
+        assert corrections == []
 
     def test_without_promotion_unchanged(self) -> None:
         out, _ = CharacterCorrector("gurmukhi").correct("ਕਾਲ")
@@ -49,7 +82,9 @@ class TestPromotedFeedback:
         assert ("ਃ", "ਂ") not in store.get_promoted_pairs("gurmukhi")
         store.close()
 
-    def test_store_promoted_applied_through_pipeline(self) -> None:
+    def test_store_promoted_refused_on_scripture_through_pipeline(self) -> None:
+        # Even a promoted, corpus-confirmed pair must not corrupt scripture as it
+        # flows through the full pipeline: ਕਾਲ is Gurbani and stays ਕਾਲ.
         store = CorrectionStore(":memory:")
         for _ in range(10):
             store.record_correction(
@@ -57,7 +92,7 @@ class TestPromotedFeedback:
             )
         data = {"words": [{"text": "ਕਾਲ", "conf": 70.0, "bbox": [], "alternatives": []}]}
         result = process_document(data, "gurmukhi", store=store)
-        assert result["corrected_text"] == "ਖਾਲ"
+        assert result["corrected_text"] == "ਕਾਲ"
         store.close()
 
 
