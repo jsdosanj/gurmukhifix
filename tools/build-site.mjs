@@ -541,7 +541,12 @@ ${sectionHead("Six scripts, one pipeline", 'Shared engine, per-script rules with
   </section>
 
   <section class="install" id="install">
-${sectionHead("Get started", "Pure-Python, MIT-licensed and free for anyone. Tesseract is a peer dependency, not a runtime requirement.")}
+${sectionHead("Get started", "On PyPI, MIT-licensed and free for anyone. gurmukhifix reads output from any OCR engine — Tesseract, Surya, Gemini or Google Vision.")}
+    <p class="install-badges">
+      <a href="${PYPI}" target="_blank" rel="noopener"><img src="https://img.shields.io/pypi/v/gurmukhifix?color=8b7cff&label=PyPI&logo=pypi&logoColor=white" alt="gurmukhifix on PyPI" height="22" /></a>
+      <img src="https://img.shields.io/pypi/pyversions/gurmukhifix?color=37d0c4&logo=python&logoColor=white" alt="Supported Python versions" height="22" />
+      <img src="https://img.shields.io/badge/licence-MIT-46d39a" alt="MIT licence" height="22" />
+    </p>
     <div class="code-cards">
       <div class="code-card"><div class="code-head"><span>Install</span><button class="copy-btn" data-copy="pip install gurmukhifix">Copy</button></div><pre><code>pip install gurmukhifix</code></pre></div>
       <div class="code-card"><div class="code-head"><span>Run Tesseract → gurmukhifix</span><button class="copy-btn" data-copy="tesseract page.png out --oem 1 --psm 6 tsv

@@ -404,6 +404,9 @@ textarea:focus-visible, .script-text:focus-visible, input:focus-visible {
 .demo-note a { color: #a99cff; text-decoration: none; border-bottom: 1px solid rgba(169, 156, 255, 0.4); }
 .demo-note a:hover { border-bottom-color: #a99cff; }
 
+.install-badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; align-items: center; margin: -4px 0 26px; }
+.install-badges img { height: 22px; border-radius: 5px; }
+
 /* Keep site navigation reachable on phones instead of hiding every link. */
 @media (max-width: 900px) {
   .nav-links { display: flex !important; flex-wrap: wrap; justify-content: flex-end; gap: 12px 16px; font-size: 13px; }
