@@ -60,8 +60,7 @@ def _is_gurmukhi(s: str) -> bool:
 def _download_db(workdir: Path) -> Path:
     print(f"Downloading {SHABADOS_PKG} via npm …", file=sys.stderr)
     subprocess.run(
-        ["npm", "pack", SHABADOS_PKG], cwd=workdir, check=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        ["npm", "pack", SHABADOS_PKG], cwd=workdir, check=True, capture_output=True,
     )
     tgz = next(workdir.glob("*.tgz"))
     with tarfile.open(tgz) as tf:
