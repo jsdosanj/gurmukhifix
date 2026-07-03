@@ -13,6 +13,8 @@
 **🌐 [Live demo & docs →](https://jsdosanj.github.io/gurmukhifix/)** — paste OCR
 text and watch it become clean Unicode, entirely in your browser.
 
+**Install:** `pip install gurmukhifix` — [on PyPI](https://pypi.org/project/gurmukhifix/).
+
 <!-- SPDX-License-Identifier: MIT -->
 
 ```
