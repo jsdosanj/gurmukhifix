@@ -419,13 +419,12 @@ textarea:focus-visible, .script-text:focus-visible, input:focus-visible {
 .pane-actions { display: inline-flex; gap: 8px; }
 
 /* Larivaar / padched Gurbani saroop figures (blog + homepage). */
-.saroop-wrap { max-width: 900px; margin: 0 auto; padding: 0 24px; }
-.saroop-figure { margin: 30px 0; }
-.saroop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.saroop-grid img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--panel-brd); display: block; }
-.saroop-grid figcaption { margin-top: 8px; text-align: center; font-size: 13px; color: var(--muted); }
-.saroop-cap { margin-top: 14px; text-align: center; font-size: 14px; color: var(--faint); max-width: 46em; margin-left: auto; margin-right: auto; }
-@media (max-width: 640px) { .saroop-grid { grid-template-columns: 1fr; } }
+.saroop-wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+.saroop-figure { margin: 28px 0 0; }
+.saroop-grid { display: grid; grid-template-columns: 1fr; gap: 22px; }
+.saroop-grid img { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--panel-brd); display: block; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.saroop-grid figcaption { margin-top: 10px; text-align: center; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--muted); }
+.saroop-cap { margin: 18px auto 0; text-align: center; font-size: 14px; color: var(--faint); max-width: 46em; }
 
 /* Keep site navigation reachable on phones instead of hiding every link. */
 @media (max-width: 900px) {
