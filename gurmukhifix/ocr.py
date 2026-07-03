@@ -392,8 +392,17 @@ def load_ocr(source: Any, fmt: str = "auto") -> OCRDocument:
 def _load_path(path: Path, fmt: str) -> OCRDocument:
     text = path.read_text(encoding="utf-8")
     if fmt == "auto":
-        ext_fmt = _EXT_FORMAT.get(path.suffix.lower(), "missing")
-        if ext_fmt not in (None, "missing"):
+        suffix = path.suffix.lower()
+        if suffix == ".json":
+            # A .json file that won't parse is a user error worth reporting clearly,
+            # not something to silently treat as plain text.
+            try:
+                data = json.loads(text)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"{path.name}: not valid JSON ({exc})") from exc
+            return load_ocr(data)
+        ext_fmt = _EXT_FORMAT.get(suffix)
+        if ext_fmt:
             return _load_text(text, ext_fmt)
     return _load_text(text, fmt)
 

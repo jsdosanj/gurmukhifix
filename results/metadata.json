@@ -1,0 +1,75 @@
+{
+  "language": "gurmukhi",
+  "processing_time_seconds": 0.0005,
+  "total_words": 5,
+  "pass_through_count": 0,
+  "corrected_count": 5,
+  "flagged_count": 0,
+  "regions": [
+    {
+      "word_index": 0,
+      "original": "this",
+      "bbox": [],
+      "original_confidence": 75.0,
+      "alternatives": [],
+      "script": "gurmukhi",
+      "status": "corrected",
+      "corrected": "this",
+      "num_corrections": 0,
+      "violations": [],
+      "has_rejections": false
+    },
+    {
+      "word_index": 1,
+      "original": "is",
+      "bbox": [],
+      "original_confidence": 75.0,
+      "alternatives": [],
+      "script": "gurmukhi",
+      "status": "corrected",
+      "corrected": "is",
+      "num_corrections": 0,
+      "violations": [],
+      "has_rejections": false
+    },
+    {
+      "word_index": 2,
+      "original": "not",
+      "bbox": [],
+      "original_confidence": 75.0,
+      "alternatives": [],
+      "script": "gurmukhi",
+      "status": "corrected",
+      "corrected": "not",
+      "num_corrections": 0,
+      "violations": [],
+      "has_rejections": false
+    },
+    {
+      "word_index": 3,
+      "original": "json",
+      "bbox": [],
+      "original_confidence": 75.0,
+      "alternatives": [],
+      "script": "gurmukhi",
+      "status": "corrected",
+      "corrected": "json",
+      "num_corrections": 0,
+      "violations": [],
+      "has_rejections": false
+    },
+    {
+      "word_index": 4,
+      "original": "{",
+      "bbox": [],
+      "original_confidence": 75.0,
+      "alternatives": [],
+      "script": "gurmukhi",
+      "status": "corrected",
+      "corrected": "{",
+      "num_corrections": 0,
+      "violations": [],
+      "has_rejections": false
+    }
+  ]
+}

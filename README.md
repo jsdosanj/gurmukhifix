@@ -1,343 +1,230 @@
-# gurmukhifix / gurmukhifix
+# gurmukhifix
 
-> Tesseract OCR post-processing engine for handwritten South Asian and Persian scripts.
-> Corrects character misrecognition, ligature errors, and diacritic placement for
-> **Gurmukhi, Punjabi, Hindi, Devanagari, Urdu, and Farsi**.
+> **Safe, evidence-gated OCR correction for Gurmukhi and other Indic scripts.**
+> Reverses the systematic Unicode-order and diacritic errors that OCR makes on
+> Gurmukhi (Punjabi), Hindi, and Devanagari — and is built so it can **never
+> silently corrupt correct text**, including Gurbani.
 
-**🌐 [Live demo &amp; docs →](https://jsdosanj.github.io/gurmukhifix/)** — paste OCR text and watch it become clean Unicode, entirely in your browser.
+**🌐 [Live demo & docs →](https://jsdosanj.github.io/gurmukhifix/)** — paste OCR
+text and watch it become clean Unicode, entirely in your browser.
 
 <!-- SPDX-License-Identifier: MIT -->
 
 ```
-Image  →  Tesseract (JSON)  →  gurmukhifix  →  Corrected Text
-                                   │
-                    ┌──────────────┼──────────────┐
-                    │              │              │
-             corrected_text  correction_report  metadata
-                .txt            .json            .json
+OCR engine  →  gurmukhifix  →  corrected Unicode + report + metadata
+(Tesseract / Surya / Gemini / Google Vision / …)
 ```
 
 ---
 
-## Why this exists
+## What it does — and what it refuses to do
 
-Tesseract performs poorly on handwritten South Asian and Persian scripts.
-Character misrecognition rates for handwritten Gurmukhi and Urdu frequently
-exceed 30–40%. The failure modes are systematic and predictable:
+OCR engines convert an image to characters but have no linguistic rules. On
+Gurmukhi they make a small set of **systematic, predictable** errors:
 
-- **Gurmukhi / Punjabi** — sihari placement errors (the vowel sign ਿ appears
-  visually before its base consonant but must follow it in Unicode); tippi/bindi
-  nasalization confusion; aspirated consonant pair misreads.
-- **Hindi (Devanagari)** — matra attachment errors; anusvara vs chandrabindu
-  confusion; sibilant ambiguity (श, ष, स).
-- **Urdu (Nastaliq)** — nukta placement errors (ب vs پ, د vs ذ) that change
-  word meaning; hamza carrier ambiguity; connected-letter breaks.
-- **Farsi (Persian)** — yeh variant encoding (ي vs ی vs ى); kaf/gaf confusion;
-  Farsi-specific letters (پ چ ژ گ) misread as Arabic equivalents.
+- **Sihari misordering** — the vowel sign ਿ is drawn *before* its base consonant
+  but must be encoded *after* it. `ਸਿਮਰਿ` is frequently emitted as `ਿਸਮਰਿ`.
+- **I-matra misordering** (Devanagari) — the same problem for ि.
+- **Nukta / dependent-vowel order** — e.g. `ਖ਼ਾਸ` emitted as `ਖਾ਼ਸ`.
+- **Character confusions** where OCR picks a valid-but-wrong look-alike letter.
 
-These are connected scripts with extensive diacritic systems and ligature rules.
-Historical orthography variation in manuscript material makes the problem harder
-than printed-text OCR. No open post-processing layer existed for all five scripts
-combined. **gurmukhifix** addresses that gap.
+gurmukhifix corrects these **after** OCR. The defining principle is safety:
 
----
+> **Every automatic change must clear an evidence gate.** A verbatim scripture
+> (Gurbani) word is *locked* and never altered automatically. Any other edit must
+> either strictly improve script-validity **or** turn a non-word into a known
+> dictionary word — a blind swap between two valid characters is refused, not
+> guessed at. Re-ordering the same characters into canonical order is always safe.
 
-## Why Python
+This matters because the target material includes sacred and heritage text, where
+turning one valid word into a *different* valid word is the worst possible failure.
+The guarantee is not a hope — it is [property-tested](tests/test_zero_corruption.py)
+across every supported script and against the whole Gurbani corpus.
 
-Python is the implementation language because:
+### Script support
 
-- **indic-nlp-library** provides Devanagari and Gurmukhi tokenization.
-- **hazm** provides Farsi/Urdu NLP utilities.
-- Python's Unicode support (`unicodedata`, `regex`) is mature enough for
-  codepoint-level manipulation across all five Unicode blocks.
-- **pytesseract** and other Tesseract Python wrappers already use Python;
-  gurmukhifix integrates naturally into existing pipelines.
-- The target users — researchers, archivists, digitization staff — are far more
-  likely to run a `pip install` than to compile a Go or Rust binary.
+| Script | Status | What runs |
+|--------|--------|-----------|
+| **Gurmukhi / Punjabi** | ✅ Primary | Sihari/nukta reordering, dictionary-gated confusion correction, Gurbani scripture lock |
+| **Hindi / Devanagari** | ✅ Supported | I-matra reordering, structural validation, evidence-gated confusion correction |
+| **Urdu / Farsi** | 🧪 Experimental | Structural validation only. Diacritic heuristics are evidence-gated and do **not** fire without a validity or dictionary signal, so no accuracy is claimed yet |
 
-The performance tradeoff (slower than a native binary) is acceptable because
-the target use case is archival digitization, not real-time OCR.
+> "Hindi" and "Devanagari" share the Devanagari script; the two config names exist
+> so Hindi-specific rules can layer on top of the shared Devanagari base.
 
 ---
 
-## How it complements Tesseract
-
-Tesseract does the heavy lifting of converting a document image into character
-sequences. It has no access to linguistic rules: it does not know that a
-dependent vowel cannot appear at the start of a word, or that a Gurmukhi
-sihari must follow its base consonant in Unicode order even though it appears
-before it visually.
-
-**gurmukhifix** applies those rules after the fact. Neither tool replaces the
-other:
-
-```
-┌───────────┐     ┌─────────────────────┐     ┌──────────────────┐
-│  Document │     │  Tesseract OCR       │     │  gurmukhifix       │
-│  Image    │────▶│  (image → chars,    │────▶│  (chars →        │
-│           │     │   JSON output)       │     │   corrected text)│
-└───────────┘     └─────────────────────┘     └──────────────────┘
-```
-
-Tesseract is run with `--oem 1 --psm 6` (or appropriate PSM for your document
-layout) and `--output-type json`. gurmukhifix reads that JSON directly.
-
----
-
-## Installation
-
-Install from [PyPI](https://pypi.org/project/gurmukhifix/):
+## Install
 
 ```bash
 pip install gurmukhifix
 ```
 
-> The repository, the importable Python package, and the PyPI distribution all
-> share one name: **`gurmukhifix`**.
+Python 3.10+. No system OCR libraries required — gurmukhifix processes OCR *output*,
+so your OCR engine is a peer, not a runtime dependency.
 
-You can also install directly from GitHub to get the latest development version:
+## First correction in 30 seconds
 
 ```bash
-pip install git+https://github.com/jsdosanj/gurmukhifix.git
+gurmukhifix demo --lang gurmukhi
 ```
 
-### System dependencies
-
-- Python 3.10 or later
-- No system OCR libraries required (Tesseract is a peer dependency, not a
-  runtime dependency of gurmukhifix)
-
-### Optional NLP extras
-
-```bash
-pip install "gurmukhifix[nlp]"
+```
+Sample [gurmukhi]: gurmukhi.json
+  OCR input : ਗੁਰਮੁਖਿ ਜਾਪੈ ਸਬਦਿ ਿਲਵ ਲਾਇ
+  Corrected : ਗੁਰਮੁਖਿ ਜਾਪੈ ਸਬਦਿ ਲਿਵ ਲਾਇ
+  1 fix(es) : 'ਿਲ'→'ਲਿ' (sihari_order_fix)
 ```
 
-This adds `scikit-learn` for contextual classifiers.
+## Quickstart on your own scans
 
----
-
-## Quickstart
+Stock Tesseract emits TSV and hOCR (it has **no** JSON renderer) — feed either
+straight in:
 
 ```bash
-# 1. Run Tesseract on your document image
-tesseract my_gurmukhi_page.tif output_tess --oem 1 --psm 6 json
+# 1. OCR your page with any engine. With Tesseract:
+tesseract my_gurmukhi_page.png out --oem 1 --psm 6 tsv
 
-# 2. Correct the Tesseract output
-gurmukhifix correct --input output_tess.json --lang gurmukhi --output ./results
+# 2. Correct it (format auto-detected):
+gurmukhifix correct --input out.tsv --lang gurmukhi --output ./results
 
-# 3. Inspect the outputs
+# 3. Read the results
 cat ./results/corrected_text.txt
-cat ./results/correction_report.json
-cat ./results/metadata.json
 ```
 
-All five languages:
+### Python API
 
-```bash
-gurmukhifix correct --input page.json --lang gurmukhi   --output ./out/gurmukhi
-gurmukhifix correct --input page.json --lang punjabi    --output ./out/punjabi
-gurmukhifix correct --input page.json --lang hindi      --output ./out/hindi
-gurmukhifix correct --input page.json --lang urdu       --output ./out/urdu
-gurmukhifix correct --input page.json --lang farsi      --output ./out/farsi
+```python
+from gurmukhifix import process_document
+
+# Feed OCR output from any supported engine: a dict, a file path, a plain string,
+# or a list of word dicts.
+result = process_document({"words": [{"text": "ਿਸਮਰ", "conf": 72}]}, "gurmukhi")
+
+print(result["corrected_text"])   # ਸਿਮਰ
+print(result["correction_report"])
 ```
 
 ---
 
-## Batch processing
+## Supported OCR formats
 
-```bash
-gurmukhifix batch \
-  --input-dir ./pages \
-  --lang urdu \
-  --output-dir ./results \
-  --workers 4
-```
+gurmukhifix is **OCR-engine-agnostic**. `process_document` (and `gurmukhifix
+correct`) auto-detect the format; run `gurmukhifix formats` to list them:
 
-Workers default to `CPU count − 1`. Each page is processed independently via
-`ProcessPoolExecutor`. Pages with per-word confidence ≥ 85 % pass through
-unchanged. Pages with confidence < 60 % are flagged for manual review without
-attempting automatic correction.
+| Format | Source |
+|--------|--------|
+| `tesseract_json` | Tesseract `--output-type json` |
+| `tesseract_tsv`  | Tesseract `tsv` / `image_to_data` |
+| `hocr`           | hOCR (Tesseract, OCRopus, Kraken) |
+| `alto`           | ALTO XML (library / heritage pipelines) |
+| `surya`          | [Surya](https://github.com/VikParuchuri/surya) OCR JSON |
+| `google_vision`  | Google Cloud Vision / Gemini document JSON |
+| `text`           | plain UTF-8 text |
+| generic          | a Python `list` of `{text, conf, bbox}` dicts |
 
----
+Because transformer OCR (Surya, Gemini, TrOCR) now beats Tesseract on Indic and
+Nastaliq scripts, this layer keeps gurmukhifix useful no matter which engine wins.
 
-## How to use with your own corpus
-
-### Per-corpus tuning
-
-gurmukhifix stores confirmed corrections in a SQLite database (`corrections.db`).
-When a correction pattern is confirmed 10 or more times, it is automatically
-promoted to the primary confusion dictionary for that script.
-
-```bash
-# Review flagged regions and add corrections to the database
-# (flagged.json is written alongside the other artifacts by 'correct' and 'batch')
-gurmukhifix review \
-  --flagged ./results/flagged.json \
-  --corrections ./my_corpus/corrections.db
-
-# Generate a report of accumulated corrections
-gurmukhifix report \
-  --corrections ./my_corpus/corrections.db \
-  --lang gurmukhi
-```
-
-### Custom correction profiles
-
-To build a correction profile specific to, say, 19th-century Punjabi manuscripts:
-
-1. Point `--corrections` at a corpus-specific database path.
-2. Process all pages in your archive.
-3. Review flagged regions using `gurmukhifix review`.
-4. After 10+ confirmations per pattern, promoted pairs appear in the report.
-5. Export the report and add promoted pairs to a custom YAML config by copying
-   `gurmukhifix/configs/punjabi.yaml` and appending the promoted pairs to `confusion_pairs`.
+Each word record is `{"text": str, "conf": 0–100, "bbox": [x, y, w, h],
+"alternatives": [...]}`. Confidence bands: ≥ 85 passes through unchanged, 60–85 is
+fully corrected, < 60 is flagged for human review.
 
 ---
 
-## How to contribute
+## Accuracy
 
-### Adding new language rules
+The benchmark runs on **real verbatim Gurbani** — 300 lines of Sri Guru Granth
+Sahib Ji ([`tests/ground_truth/gurbani_sggs.txt`](tests/ground_truth/)) — into
+which the most common Tesseract Gurmukhi error (word-initial sihari misordering) is
+injected. It reports Character Error Rate of the corrupted text vs gurmukhifix's
+output, both against the truth:
 
-Most high-level correction rules live in `gurmukhifix/configs/{language}.yaml`. Some
-low-level script-specific handling (for example, ligature, diacritic, and
-validator behaviour) is implemented in Python modules. To add or update rules:
+| Language | Lines w/ injected error | Baseline CER | Corrected CER | Clean text corrupted? |
+|----------|------------------------:|-------------:|--------------:|----------------------:|
+| gurmukhi | 148 / 300 | 0.0776 | **0.0000** | none |
 
-1. Fork the repository.
-2. Edit the relevant `gurmukhifix/configs/{language}.yaml`.
-3. Add a test case in `tests/test_corrector.py` that exercises the new rule.
-4. Run `pytest tests/` — all tests must pass.
-5. Submit a pull request.
+```bash
+python -m tests.benchmark   # reproduce
+```
 
-### Adding test cases
+**Honest scope:** this measures the engine's ability to reverse a *documented,
+targeted* error class on real Gurbani — not end-to-end accuracy on a scanned
+manuscript, which needs a human-labelled scan corpus. Drop paired
+`{"language","ocr","truth"}` JSON into `tests/ground_truth/` and it is folded in
+automatically. The clean lines double as a corruption check: their corrected CER
+must stay `0.0000`.
 
-Every bug fix must include a regression test using the exact input that exposed
-the bug. Place these in the appropriate `tests/test_*.py` file.
+---
 
-### Submitting corrections to the community database
+## How it works
 
-If you have manually verified correction pairs for a specific corpus, you can
-submit them as a pull request to `gurmukhifix/configs/{language}.yaml`. Each pair must
-include a `note` field explaining the confusion and, where possible, a reference
-to the source corpus or academic work.
+| Module | Role |
+|--------|------|
+| `evidence.py` | The evidence gate — the single rule every automatic change must clear |
+| `lexicon.py` | Gurbani + Punjabi word lists (scripture lock + dictionary evidence) |
+| `validator.py` | Script-grammar validity ("badness") scoring |
+| `corrector.py` | Evidence-gated confusion/diacritic correction |
+| `diacritic.py` | Sihari / i-matra / nukta reordering |
+| `ligature.py` | Ligature / conjunct handling |
+| `ocr.py` | OCR-engine-agnostic input adapters |
+| `integration.py` | Pipeline orchestration + output artifacts |
+| `learner.py` | SQLite store; promotes a correction after 10 confirmations (a frequency threshold, not a Bayesian model) |
 
-### Promoting community corrections to default configs
-
-When a correction pair accumulates 10 confirmed instances across independent
-contributors, it is eligible for promotion. Open an issue with the correction
-data and a maintainer will add it to the default config after review.
+The lexicon is derived from the [Shabad OS database](https://github.com/shabados/database);
+see [`gurmukhifix/data/LEXICON.md`](gurmukhifix/data/LEXICON.md) for provenance.
 
 ---
 
 ## Output artifacts
 
-Each `gurmukhifix correct` or `gurmukhifix batch` run produces three files:
+Each `gurmukhifix correct` / `batch` run writes:
 
 | File | Contents |
 |------|----------|
 | `corrected_text.txt` | Final corrected Unicode text |
-| `correction_report.json` | Every correction: original, corrected, rule applied, confidence delta, bounding box |
-| `metadata.json` | Per-region confidence scores, flagged uncertain regions, Tesseract alternatives preserved |
+| `correction_report.json` | Every correction: original, corrected, rule, position, bbox |
+| `metadata.json` | Per-region confidence, flags, Tesseract alternatives preserved |
+| `flagged.json` | Regions below the review threshold or still structurally invalid |
 
-Spatial data (bounding boxes) is preserved throughout so downstream tools can
-reconstruct document layout from the output.
+## Per-corpus learning
 
----
+Confirmed corrections are stored in SQLite; once a pattern is confirmed 10+ times it
+is promoted. Promoted corrections are still run through the evidence gate — they
+apply in the context they were confirmed and **never** override the scripture lock.
 
-## Confidence bands
-
-| Confidence | Action |
-|------------|--------|
-| ≥ 85 % | Pass through unchanged (high-confidence Tesseract output) |
-| 60–85 % | Full correction pipeline applied |
-| < 60 % | Flagged for manual review; Tesseract alternatives preserved |
-
----
-
-## Repository structure
-
-```
-gurmukhifix/
-  configs/
-    gurmukhi.yaml     ← Gurmukhi confusion pairs and rules
-    punjabi.yaml      ← Punjabi-specific rules
-    urdu.yaml         ← Urdu nukta and hamza rules
-    hindi.yaml        ← Hindi matra and anusvara rules
-    farsi.yaml        ← Farsi yeh, kaf/gaf, and joining rules
-  corrector.py        ← Character Correction Engine
-  validator.py        ← Script Integrity Validator
-  ligature.py         ← Ligature and Conjunct Handler
-  diacritic.py        ← Diacritic and Nukta Recovery
-  integration.py      ← Tesseract JSON parsing and pipeline orchestration
-  learner.py          ← SQLite learning and Bayesian promotion
-  cli.py              ← Click CLI
-tests/
-  ground_truth/       ← JSON ground-truth samples (one file per language)
-  test_corrector.py
-  test_validator.py
-  test_integration.py
-  test_learner.py
-  test_ligature_diacritic.py
-  test_cli.py
-  benchmark.py        ← CER/WER benchmark script
-corrections.db        ← gitignored; created at runtime
-schema.sql            ← corrections.db schema
-pyproject.toml
-LICENSE
-README.md
+```bash
+gurmukhifix review --flagged ./results/flagged.json --corrections ./my.db
+gurmukhifix report --corrections ./my.db --lang gurmukhi
 ```
 
 ---
 
-## Running tests
+## Development
 
 ```bash
 pip install -e ".[dev]"
-pytest tests/
+pytest                      # full suite incl. property-based no-corruption tests
+python -m tests.benchmark   # accuracy benchmark
+ruff check . && mypy gurmukhifix   # lint + types
 ```
 
-Running the accuracy benchmark:
-
-```bash
-python -m tests.benchmark
-```
-
----
+Every bug fix must ship with a regression test using the exact input that exposed
+it. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Releasing
 
-`gurmukhifix` publishes to PyPI from a GitHub Release via Trusted Publishing —
-no stored tokens. See **[PUBLISHING.md](PUBLISHING.md)** for the full
-step-by-step (one-time setup plus the per-release checklist).
-
----
+Publishes to PyPI from a GitHub Release via Trusted Publishing — see
+[PUBLISHING.md](PUBLISHING.md).
 
 ## License
 
-SPDX-License-Identifier: MIT
-
-gurmukhifix is **free and open source under the MIT license** — anyone may use
-it for any purpose, including commercial, at no cost. See [LICENSE](LICENSE).
-
-This project is released under the [MIT License](LICENSE).
-
-MIT was chosen to maximise adoption: researchers, archivists, commercial
-digitization firms, and government heritage projects all face different legal
-constraints. MIT imposes none. It allows use in proprietary pipelines, forks
-without contribution requirements, and redistribution in any form.
-
----
+**MIT** — free and open source for any use, including commercial. See [LICENSE](LICENSE).
 
 ## Acknowledgements
 
-- **Tesseract OCR** — the upstream engine whose output this tool corrects.
-- **HANDS dataset** — handwritten historical document corpora used to inform
-  frequency tables.
-- **IIIT-HW** — handwritten word recognition datasets from IIIT Hyderabad.
-- **OpenITI** — open Islamicate text corpus providing Urdu and Farsi training
-  material references.
-- **indic-nlp-library** — Devanagari and Gurmukhi tokenization.
-- **hazm** — Farsi/Urdu NLP toolkit.
-- The Gurmukhi Unicode specification and the Unicode Consortium for the
-  Gurmukhi, Devanagari, and Arabic block documentation.
-
+- **[Shabad OS](https://github.com/shabados/database)** and **[BaniDB](https://banidb.com)** —
+  the Gurbani corpus behind the lexicon and benchmark.
+- **Tesseract**, **Surya**, and the transformer-OCR community — the engines whose
+  output this tool corrects.
+- The Unicode Consortium — Gurmukhi, Devanagari, and Arabic block documentation.

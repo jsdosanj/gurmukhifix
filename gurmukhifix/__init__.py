@@ -18,7 +18,7 @@ from .learner import CorrectionStore
 from .lexicon import Lexicon
 from .validator import ScriptValidator, validate_text
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "process_document",

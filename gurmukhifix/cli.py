@@ -18,10 +18,25 @@ from typing import Any
 
 import click
 
-from .integration import DocumentProcessor, TesseractOutput, process_document
+from .integration import DocumentProcessor, process_document
 from .learner import CorrectionStore
+from .ocr import load_ocr
 
 SUPPORTED_LANGUAGES = ["gurmukhi", "punjabi", "hindi", "devanagari", "urdu", "farsi"]
+OCR_FORMATS = [
+    "auto",
+    "tesseract_json",
+    "tesseract_tsv",
+    "hocr",
+    "alto",
+    "surya",
+    "google_vision",
+    "text",
+]
+_SAMPLES_DIR = Path(__file__).parent / "samples"
+
+# Errors that mean "bad input", to be reported as a one-line message (not a traceback).
+_INPUT_ERRORS = (ValueError, json.JSONDecodeError, FileNotFoundError, OSError)
 
 
 @click.group()
@@ -50,15 +65,24 @@ def cli() -> None:
     help="Directory for output artifacts."
 )
 @click.option(
+    "--format", "fmt", default="auto", show_default=True,
+    type=click.Choice(OCR_FORMATS, case_sensitive=False),
+    help="OCR output format ('auto' detects it)."
+)
+@click.option(
     "--corrections", "db_path", default=None, type=click.Path(exists=True),
     help="Optional corrections database; its promoted corrections are applied."
 )
-def correct(input_file: str, lang: str, output_dir: str, db_path: str | None) -> None:
-    """Correct a single Tesseract JSON file."""
+def correct(input_file: str, lang: str, output_dir: str, fmt: str, db_path: str | None) -> None:
+    """Correct a single OCR output file (Tesseract JSON/TSV/hOCR, ALTO, Surya, …)."""
     click.echo(f"Processing {input_file} [{lang}] …")
     store = CorrectionStore(db_path) if db_path else None
     try:
-        result = process_document(Path(input_file), lang, output_dir=output_dir, store=store)
+        result = process_document(Path(input_file), lang, output_dir=output_dir, store=store, fmt=fmt)
+    except _INPUT_ERRORS as exc:
+        # Never dump a traceback for a bad input file — one actionable line + exit 1.
+        click.echo(f"Error: {exc}", err=True)
+        raise SystemExit(1) from None
     finally:
         if store is not None:
             store.close()
@@ -69,7 +93,9 @@ def correct(input_file: str, lang: str, output_dir: str, db_path: str | None) ->
         f"Done. {n_corr} correction(s), {n_flag} flagged region(s). "
         f"Time: {elapsed:.3f}s"
     )
-    click.echo(f"Output written to: {output_dir}")
+    click.echo(f"Output written to: {output_dir}/ (corrected_text.txt, correction_report.json, …)")
+    if n_flag:
+        click.echo(f"Next: review flagged regions with  gurmukhifix review --flagged {output_dir}/flagged.json")
 
 
 # ---------------------------------------------------------------------------
@@ -82,9 +108,10 @@ def correct(input_file: str, lang: str, output_dir: str, db_path: str | None) ->
 _WORKER: dict[str, Any] = {}
 
 
-def _worker_init(language: str, db_path: str | None) -> None:
+def _worker_init(language: str, db_path: str | None, fmt: str) -> None:
     store = CorrectionStore(db_path) if db_path else None
     _WORKER["processor"] = DocumentProcessor(language, store=store)
+    _WORKER["fmt"] = fmt
 
 
 def _process_file_worker(args: tuple[str, str]) -> dict[str, Any]:
@@ -92,7 +119,7 @@ def _process_file_worker(args: tuple[str, str]) -> dict[str, Any]:
     input_file, output_dir = args
     try:
         processor = _WORKER["processor"]
-        result = processor.process(TesseractOutput.from_file(Path(input_file)))
+        result = processor.process(load_ocr(Path(input_file), _WORKER["fmt"]))
         processor.write_outputs(result, output_dir)
         return {
             "file": input_file,
@@ -129,6 +156,11 @@ def _process_file_worker(args: tuple[str, str]) -> dict[str, Any]:
     help="Glob pattern for input files."
 )
 @click.option(
+    "--format", "fmt", default="auto", show_default=True,
+    type=click.Choice(OCR_FORMATS, case_sensitive=False),
+    help="OCR output format ('auto' detects it)."
+)
+@click.option(
     "--corrections", "db_path", default=None, type=click.Path(exists=True),
     help="Optional corrections database; its promoted corrections are applied."
 )
@@ -138,6 +170,7 @@ def batch(
     output_dir: str,
     workers: int | None,
     pattern: str,
+    fmt: str,
     db_path: str | None,
 ) -> None:
     """Process a directory of Tesseract JSON files in parallel."""
@@ -164,18 +197,25 @@ def batch(
 
     results: list[dict[str, Any]] = []
     with ProcessPoolExecutor(
-        max_workers=workers, initializer=_worker_init, initargs=(lang, db_path)
+        max_workers=workers, initializer=_worker_init, initargs=(lang, db_path, fmt)
     ) as pool:
         futures = {pool.submit(_process_file_worker, t): t for t in tasks}
         for future in as_completed(futures):
             res = future.result()
             results.append(res)
-            status = "✓" if res["status"] == "ok" else "✗"
-            click.echo(f"  {status} {Path(res['file']).name}")
+            if res["status"] == "ok":
+                click.echo(f"  ✓ {Path(res['file']).name}")
+            else:
+                # Surface the reason so a failure in a large run is triageable.
+                click.echo(f"  ✗ {Path(res['file']).name}: {res.get('error', 'unknown error')}", err=True)
 
     ok = sum(1 for r in results if r["status"] == "ok")
-    err = len(results) - ok
-    click.echo(f"\nBatch complete: {ok} succeeded, {err} failed.")
+    failed = [r for r in results if r["status"] != "ok"]
+    click.echo(f"\nBatch complete: {ok} succeeded, {len(failed)} failed.")
+    if failed:
+        click.echo("Failed files:", err=True)
+        for r in failed:
+            click.echo(f"  {Path(r['file']).name}: {r.get('error', 'unknown error')}", err=True)
 
 
 # ---------------------------------------------------------------------------
@@ -290,6 +330,52 @@ def report(db_path: str, lang: str, output_file: str | None) -> None:
         click.echo(f"Report written to {output_file}")
     else:
         click.echo(output)
+
+
+# ---------------------------------------------------------------------------
+# demo / formats
+# ---------------------------------------------------------------------------
+
+@cli.command()
+@click.option(
+    "--lang", default="gurmukhi", show_default=True,
+    type=click.Choice(SUPPORTED_LANGUAGES, case_sensitive=False),
+    help="Which bundled sample to run."
+)
+def demo(lang: str) -> None:
+    """Run gurmukhifix on a bundled OCR sample and show the before/after."""
+    sample = _SAMPLES_DIR / f"{lang}.json"
+    if not sample.exists():
+        available = ", ".join(p.stem for p in sorted(_SAMPLES_DIR.glob("*.json")))
+        click.echo(f"No bundled sample for '{lang}'. Available: {available}", err=True)
+        raise SystemExit(1)
+    doc = load_ocr(sample)
+    original = " ".join(w["text"] for w in doc.words)
+    result = process_document(sample, lang)
+    click.echo(f"Sample [{lang}]: {sample.name}")
+    click.echo(f"  OCR input : {original}")
+    click.echo(f"  Corrected : {result['corrected_text']}")
+    report = result["correction_report"]
+    if report:
+        fixes = ", ".join(f"{c['original']!r}→{c['corrected']!r} ({c['rule']})" for c in report)
+        click.echo(f"  {len(report)} fix(es) : {fixes}")
+    else:
+        click.echo("  (no corrections needed)")
+    click.echo(f"\nRun it on your own OCR:  gurmukhifix correct --input your_ocr.tsv --lang {lang}")
+
+
+@cli.command(name="formats")
+def formats_cmd() -> None:
+    """List the OCR output formats gurmukhifix can read."""
+    click.echo("gurmukhifix reads OCR output from any of these (auto-detected):\n")
+    for fmt in OCR_FORMATS:
+        if fmt != "auto":
+            click.echo(f"  • {fmt}")
+    click.echo(
+        "\nStock-Tesseract on-ramp (no special build needed):\n"
+        "  tesseract page.png out tsv\n"
+        "  gurmukhifix correct --input out.tsv --lang gurmukhi"
+    )
 
 
 if __name__ == "__main__":
