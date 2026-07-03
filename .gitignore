@@ -56,3 +56,4 @@ Thumbs.db
 
 # Cloudflare Wrangler local cache
 .wrangler/
+.gstack/

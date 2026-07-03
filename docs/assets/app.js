@@ -229,6 +229,43 @@
     return (data.text || "").trim();
   }
 
+  // Reconstruct a PDF text layer with position-aware spacing. Naively joining
+  // items with " " shatters complex-script words (each cluster is its own item);
+  // joining with "" merges words. Instead, add a space only on a real horizontal
+  // gap and a newline on a line change, and strip dotted-circle placeholders.
+  function layoutText(tc) {
+    let text = "";
+    let prevEndX = null, prevY = null;
+    for (const it of tc.items) {
+      const str = it.str || "";
+      const tr = it.transform || [1, 0, 0, 1, 0, 0];
+      const x = tr[4], y = tr[5], w = it.width || 0, h = it.height || 10;
+      if (prevY !== null && Math.abs(y - prevY) > h * 0.6) {
+        text += "\n";
+      } else if (prevEndX !== null && x - prevEndX > Math.max(1, h * 0.25) && !/\s$/.test(text) && !/^\s/.test(str)) {
+        text += " ";
+      }
+      text += str;
+      prevEndX = x + w;
+      prevY = y;
+      if (it.hasEOL) { text += "\n"; prevEndX = null; }
+    }
+    return text
+      .replace(/◌/g, "")             // dotted-circle rendering placeholders
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/[ \t]*\n[ \t]*/g, "\n")
+      .trim();
+  }
+
+  // A text layer where most tokens are a single grapheme is garbage (a broken
+  // complex-script ToUnicode map) — better to OCR the rendered page instead.
+  function looksShattered(t) {
+    const toks = t.split(/\s+/).filter(Boolean);
+    if (toks.length < 4) return false;
+    const singles = toks.filter((w) => Array.from(w).length === 1).length;
+    return singles / toks.length > 0.5;
+  }
+
   async function extractPdf(file, lang, status) {
     const pdfjs = await loadPdfjs();
     const buf = await file.arrayBuffer();
@@ -241,15 +278,15 @@
       status.textContent = `PDF page ${p}/${pages}…`;
       const page = await pdf.getPage(p);
 
-      // 1) Digital PDF — use the embedded text layer directly (fast + exact).
+      // 1) Digital PDF — reconstruct the embedded text layer (fast + exact).
       let text = "";
       try {
-        const tc = await page.getTextContent();
-        text = tc.items.map((it) => it.str).join(" ").replace(/\s+/g, " ").trim();
+        text = layoutText(await page.getTextContent());
       } catch (_) { /* no text layer */ }
 
-      // 2) Scanned page (little/no embedded text) — render + OCR it.
-      if (text.replace(/\s/g, "").length < 12) {
+      // 2) No usable text layer (a scan, or a shattered complex-script layer) —
+      //    render the page to an image and OCR it instead.
+      if (text.replace(/\s/g, "").length < 12 || looksShattered(text)) {
         if (!tesseractReady) { await loadTesseract(); tesseractReady = true; }
         const viewport = page.getViewport({ scale: 2 });
         const canvas = document.createElement("canvas");
