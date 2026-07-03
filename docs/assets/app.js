@@ -17,15 +17,20 @@
       { label: "Nukta order", text: "ਭਾਸਾ਼ ਬੋਲੀ" },
       { label: "Already clean", text: "ਪੰਜਾਬੀ ਮਾਂ ਬੋਲੀ" },
     ],
-    devanagari: [
+    hindi: [
+      { label: "I-matra error", text: "िकताब पढ़ना" },
       { label: "Already clean", text: "नमस्ते दुनिया" },
-      { label: "Vowel at start", text: "ाकमल देश" },
       { label: "Hindi phrase", text: "हिंदी भाषा" },
+    ],
+    devanagari: [
+      { label: "I-matra error", text: "िकताब" },
+      { label: "Vowel at start", text: "ाकमल देश" },
+      { label: "Already clean", text: "मराठी भाषा" },
     ],
   };
 
-  // Tesseract language codes for the experimental image mode.
-  const TESS_LANG = { gurmukhi: "pan", punjabi: "pan", devanagari: "hin" };
+  // Tesseract language codes for the image/PDF-scan OCR mode.
+  const TESS_LANG = { gurmukhi: "pan", punjabi: "pan", hindi: "hin", devanagari: "hin" };
 
   const SEV_NAME = { 100: "reject", 10: "warn", 1: "review" };
 
@@ -142,7 +147,7 @@
     }
   }
 
-  // ── Copy buttons ───────────────────────────────────────────────────────────
+  // ── Copy + download ────────────────────────────────────────────────────────
   function initCopy() {
     $("copy-btn").addEventListener("click", () => copyText($("output").textContent, $("copy-btn")));
     document.querySelectorAll(".copy-btn[data-copy]").forEach((btn) => {
@@ -156,15 +161,30 @@
       setTimeout(() => (btn.textContent = old), 1400);
     }).catch(() => {});
   }
+  function initDownload() {
+    const btn = $("download-btn");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const text = $("output").textContent || "";
+      if (!text.trim()) return;
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `gurmukhifix-${currentScript}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+  }
 
-  // ── Experimental Tesseract.js image OCR ────────────────────────────────────
+  // ── CDN loaders (pinned + Subresource Integrity: a tampered CDN file is
+  //    refused by the browser). Both engines run entirely client-side. ─────────
   let tesseractLoaded = false;
   function loadTesseract() {
     return new Promise((resolve, reject) => {
       if (tesseractLoaded && window.Tesseract) return resolve();
       const sc = document.createElement("script");
-      // Pinned version + Subresource Integrity: if the CDN file is tampered
-      // with, the browser refuses to run it.
       sc.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
       sc.integrity = "sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F";
       sc.crossOrigin = "anonymous";
@@ -172,6 +192,84 @@
       sc.onerror = () => reject(new Error("Failed to load Tesseract.js"));
       document.head.appendChild(sc);
     });
+  }
+
+  const PDFJS_BASE = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/";
+  let pdfjsLoaded = false;
+  function loadPdfjs() {
+    return new Promise((resolve, reject) => {
+      if (pdfjsLoaded && window.pdfjsLib) return resolve(window.pdfjsLib);
+      const sc = document.createElement("script");
+      sc.src = PDFJS_BASE + "pdf.min.js";
+      sc.integrity = "sha384-OemFRmhjDZwhIKuUld0HJozkF2YErsgDaCL41trxGQZt4/WgnopJQqQl2DvDZ07Z";
+      sc.crossOrigin = "anonymous";
+      sc.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_BASE + "pdf.worker.min.js";
+        pdfjsLoaded = true;
+        resolve(window.pdfjsLib);
+      };
+      sc.onerror = () => reject(new Error("Failed to load pdf.js"));
+      document.head.appendChild(sc);
+    });
+  }
+
+  // ── Image / PDF extraction ─────────────────────────────────────────────────
+  const MAX_PDF_PAGES = 15;
+  const MAX_BYTES = 25 * 1024 * 1024;
+
+  async function extractImage(file, lang, status) {
+    await loadTesseract();
+    status.textContent = `Recognising (${lang})…`;
+    const { data } = await window.Tesseract.recognize(file, lang, {
+      logger: (m) => {
+        if (m.status === "recognizing text")
+          status.textContent = `Recognising… ${Math.round(m.progress * 100)}%`;
+      },
+    });
+    return (data.text || "").trim();
+  }
+
+  async function extractPdf(file, lang, status) {
+    const pdfjs = await loadPdfjs();
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument({ data: buf }).promise;
+    const pages = Math.min(pdf.numPages, MAX_PDF_PAGES);
+    const chunks = [];
+    let tesseractReady = false;
+
+    for (let p = 1; p <= pages; p++) {
+      status.textContent = `PDF page ${p}/${pages}…`;
+      const page = await pdf.getPage(p);
+
+      // 1) Digital PDF — use the embedded text layer directly (fast + exact).
+      let text = "";
+      try {
+        const tc = await page.getTextContent();
+        text = tc.items.map((it) => it.str).join(" ").replace(/\s+/g, " ").trim();
+      } catch (_) { /* no text layer */ }
+
+      // 2) Scanned page (little/no embedded text) — render + OCR it.
+      if (text.replace(/\s/g, "").length < 12) {
+        if (!tesseractReady) { await loadTesseract(); tesseractReady = true; }
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+        const { data } = await window.Tesseract.recognize(canvas, lang, {
+          logger: (m) => {
+            if (m.status === "recognizing text")
+              status.textContent = `PDF page ${p}/${pages} — OCR ${Math.round(m.progress * 100)}%`;
+          },
+        });
+        text = (data.text || "").trim();
+      }
+      if (text) chunks.push(text);
+    }
+
+    const skipped = pdf.numPages - pages;
+    const note = skipped > 0 ? `\n\n[… ${skipped} more page(s) not processed in the demo]` : "";
+    return chunks.join("\n\n") + note;
   }
 
   function initOcr() {
@@ -182,27 +280,32 @@
     const file = $("ocr-file");
     const runBtn = $("ocr-run");
     file.addEventListener("change", () => { runBtn.disabled = !file.files.length; });
+
     runBtn.addEventListener("click", async () => {
       if (!file.files.length) return;
+      const f = file.files[0];
       const status = $("ocr-status");
       const lang = TESS_LANG[currentScript] || "eng";
+
+      if (f.size > MAX_BYTES) {
+        status.textContent = "File too large for the in-browser demo (max 25 MB).";
+        return;
+      }
+
       runBtn.disabled = true;
-      status.textContent = "Loading OCR engine…";
+      status.textContent = "Loading engine…";
       try {
-        await loadTesseract();
-        status.textContent = `Recognising (${lang})…`;
-        const { data } = await window.Tesseract.recognize(file.files[0], lang, {
-          logger: (m) => {
-            if (m.status === "recognizing text") {
-              status.textContent = `Recognising… ${Math.round(m.progress * 100)}%`;
-            }
-          },
-        });
-        $("input").value = (data.text || "").trim();
+        const isPdf = f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+        const text = isPdf
+          ? await extractPdf(f, lang, status)
+          : await extractImage(f, lang, status);
+        $("input").value = text;
         run();
-        status.textContent = "Done — cleaned by gurmukhifix below.";
+        status.textContent = text.trim()
+          ? "Extracted — cleaned by gurmukhifix below."
+          : "No text found. Try a clearer scan, or pick the matching script.";
       } catch (e) {
-        status.textContent = "OCR failed: " + e.message;
+        status.textContent = "Extraction failed: " + (e && e.message ? e.message : String(e));
       } finally {
         runBtn.disabled = false;
       }
@@ -217,6 +320,7 @@
     initSelector();
     renderExamples();
     initCopy();
+    initDownload();
     initOcr();
     $("input").value = SF.SCRIPTS[currentScript].sample;
     let t;

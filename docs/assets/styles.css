@@ -407,6 +407,17 @@ textarea:focus-visible, .script-text:focus-visible, input:focus-visible {
 .install-badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; align-items: center; margin: -4px 0 26px; }
 .install-badges img { height: 22px; border-radius: 5px; }
 
+/* Script-card status tags + demo output actions. */
+.script-card { position: relative; }
+.card-tag {
+  position: absolute; top: 12px; right: 12px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px;
+}
+.card-tag.in-demo { color: #37d0c4; background: rgba(55, 208, 196, 0.12); border: 1px solid rgba(55, 208, 196, 0.35); }
+.card-tag.exp { color: #e0a94a; background: rgba(224, 169, 74, 0.12); border: 1px solid rgba(224, 169, 74, 0.35); }
+.pane-actions { display: inline-flex; gap: 8px; }
+
 /* Keep site navigation reachable on phones instead of hiding every link. */
 @media (max-width: 900px) {
   .nav-links { display: flex !important; flex-wrap: wrap; justify-content: flex-end; gap: 12px 16px; font-size: 13px; }
