@@ -1,0 +1,33 @@
+name: Deploy site to Cloudflare Pages
+
+# Publishes the docs/ site to the Cloudflare Pages project `gurmukhifix`
+# (served at https://gurmukhifix.dosanjhlabs.com) on every change to docs/.
+# Requires a repo secret CLOUDFLARE_API_TOKEN with the "Cloudflare Pages: Edit"
+# permission. GitHub Pages continues to serve independently (no redirect).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Deploy docs/ to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 0d4412e40181808b16cce0225ddb5152
+          command: pages deploy docs --project-name=gurmukhifix --branch=main
