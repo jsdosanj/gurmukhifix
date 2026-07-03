@@ -16,6 +16,8 @@ const DOCS = resolve(ROOT, "docs");
 const BASE_URL = "https://gurmukhifix.dosanjhlabs.com";
 const REPO = "https://github.com/jsdosanj/gurmukhifix";
 const PYPI = "https://pypi.org/project/gurmukhifix/";
+// Bump when assets/*.css|*.js change, to bust browser caches on the next load.
+const ASSET_VER = "2";
 
 const write = (rel, content) => {
   const p = resolve(DOCS, rel);
@@ -39,7 +41,7 @@ function layout({ title, description, rel, active, body, home = false, canonical
     .join("\n        ");
 
   const scripts = home
-    ? `\n  <script src="${rel}assets/gurmukhifix.js"></script>\n  <script src="${rel}assets/app.js"></script>`
+    ? `\n  <script src="${rel}assets/gurmukhifix.js?v=${ASSET_VER}"></script>\n  <script src="${rel}assets/app.js?v=${ASSET_VER}"></script>`
     : "";
 
   return `<!DOCTYPE html>
@@ -65,7 +67,7 @@ function layout({ title, description, rel, active, body, home = false, canonical
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600&family=Noto+Nastaliq+Urdu:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="${rel}assets/styles.css" />
+  <link rel="stylesheet" href="${rel}assets/styles.css?v=${ASSET_VER}" />
   <script type="application/ld+json">${JSON.stringify({
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -465,7 +467,7 @@ function notFound() {
 <html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Not found — gurmukhifix</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+Gurmukhi:wght@700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="${b}assets/styles.css" /></head>
+<link rel="stylesheet" href="${b}assets/styles.css?v=${ASSET_VER}" /></head>
 <body><div class="bg-aurora" aria-hidden="true"></div>
 <section class="notfound"><span class="brand-mark big">ਸ</span><h1>404</h1><p>That page wandered off. Let's get you back.</p>
 <div class="hero-cta"><a class="btn btn-primary" href="${b}">Home</a><a class="btn btn-ghost" href="${b}scripts/">Scripts</a></div></section>
