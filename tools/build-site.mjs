@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DOCS = resolve(ROOT, "docs");
-const BASE_URL = "https://jsdosanj.github.io/gurmukhifix";
+const BASE_URL = "https://gurmukhifix.dosanjhlabs.com";
 const REPO = "https://github.com/jsdosanj/gurmukhifix";
 const PYPI = "https://pypi.org/project/gurmukhifix/";
 
@@ -450,7 +450,7 @@ SOFTWARE.`;
 // ── 404 ─────────────────────────────────────────────────────────────────────
 function notFound() {
   // Absolute base path so a 404 at any depth still finds its assets.
-  const b = "/gurmukhifix/";
+  const b = "/";
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Not found — gurmukhifix</title>
@@ -587,4 +587,5 @@ write("license.html", licensePage());
 write("404.html", notFound());
 write("sitemap.xml", sitemap());
 write("robots.txt", robots);
+write("CNAME", "gurmukhifix.dosanjhlabs.com\n");
 console.log("\nSite built into docs/");

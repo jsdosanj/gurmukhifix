@@ -10,7 +10,7 @@
 > Gurmukhi (Punjabi), Hindi, and Devanagari — and is built so it can **never
 > silently corrupt correct text**, including Gurbani.
 
-**🌐 [Live demo & docs →](https://jsdosanj.github.io/gurmukhifix/)** — paste OCR
+**🌐 [Live demo & docs →](https://gurmukhifix.dosanjhlabs.com/)** — paste OCR
 text and watch it become clean Unicode, entirely in your browser.
 
 **Install:** `pip install gurmukhifix` — [on PyPI](https://pypi.org/project/gurmukhifix/).
