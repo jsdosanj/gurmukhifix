@@ -587,5 +587,4 @@ write("license.html", licensePage());
 write("404.html", notFound());
 write("sitemap.xml", sitemap());
 write("robots.txt", robots);
-write("CNAME", "gurmukhifix.dosanjhlabs.com\n");
 console.log("\nSite built into docs/");
