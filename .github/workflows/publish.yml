@@ -63,7 +63,7 @@ jobs:
           path: dist/
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@27f0f3c4edb107f8364379c4030f2bc510a6a8b4 # release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
 
   publish-testpypi:
     # TestPyPI dry run: manual runs targeting testpypi.
@@ -81,6 +81,6 @@ jobs:
           path: dist/
 
       - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@27f0f3c4edb107f8364379c4030f2bc510a6a8b4 # release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
         with:
           repository-url: https://test.pypi.org/legacy/
