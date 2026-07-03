@@ -379,22 +379,32 @@ function blogPage() {
       <p>Take one example that haunted the Gurmukhi pages. The vowel sign <em>sihari</em> (ਿ) is written to the <em>left</em> of the consonant it belongs to — but the Unicode standard says it must be <em>stored after</em> that consonant. Tesseract, faithfully, writes down what it sees: the sihari first. The result renders almost correctly on screen, so it passes the eye test. Then you search for the word and get nothing, because at the byte level it's a different, impossible sequence.</p>
       <p>Persian and Urdu had their own version of this: a single misplaced or dropped nukta turning ب into پ, or ی silently encoded as ي. Hindi had matras detached from their consonants. Every script had a handful of these — predictable, rule-shaped failures that no amount of re-running Tesseract would fix, because <strong>Tesseract has no idea what the script's rules are</strong>. Its job is pixels to characters. It does not know that a dependent vowel cannot begin a word.</p>
 
+      <h2>Larivaar, padched, and where words begin</h2>
+      <p>There is a second, deeper version of the same problem, and it is unique to Gurbani. Historically the Guru Granth Sahib was written <em>larivaar</em> — one unbroken stream of letters, with no spaces between words at all. Later <em>padched</em> ("word-split") saroops added the spaces to aid reading. OCR of either has to decide where one word ends and the next begins, and it gets that wrong constantly: fusing words that belong apart, or splitting one mid-cluster.</p>
+      <figure class="saroop-figure">
+        <div class="saroop-grid">
+          <div><img src="../assets/larivaar.png" alt="Mool Mantar written larivaar — a continuous stream of Gurmukhi with no spaces between words" loading="lazy" /><figcaption>Larivaar — no word breaks</figcaption></div>
+          <div><img src="../assets/padched.png" alt="The same Mool Mantar written padched — a space between every word" loading="lazy" /><figcaption>Padched — word-separated</figcaption></div>
+        </div>
+        <figcaption class="saroop-cap">The same Mool Mantar. Word boundaries are precisely what OCR — and any search index built on it — has to get right, and precisely what gurmukhifix reasons about, gated against a verbatim Gurbani lexicon so a real scripture word is never split or rewritten.</figcaption>
+      </figure>
+
       <h2>Why the obvious fixes didn't work</h2>
       <p>The tempting first move is a find-and-replace table: "whenever you see X, write Y." We tried versions of that. It was a disaster. A blind substitution rewrites the letters that were <em>already correct</em>, and on a corpus that is mostly correct, that means you corrupt far more than you fix. An early naive pass actually made the text <em>worse</em> than raw Tesseract — by a lot.</p>
       <p>The other tempting move is "just train a better model." That helps the recognition step, but it's expensive, needs labelled handwriting data we didn't have, and still leaves the structural Unicode problems untouched.</p>
 
       <h2>The idea: correct only with evidence</h2>
       <p>What finally worked was a different framing. Don't guess. Only change a character when there's <strong>evidence</strong> that the change makes the text more linguistically valid. If a word is already well-formed, leave it completely alone. If a sihari is sitting where a vowel sign can't legally sit, reorder it — because that move provably resolves a violation. If two letters are genuinely ambiguous and there's no signal which is right, don't flip a coin; flag it for a human.</p>
-      <p>That principle — <em>evidence-gated correction</em> — became gurmukhifix. It sits <em>after</em> Tesseract, reads its JSON output, and applies the script-specific rules Tesseract can't: reorder the sihari, canonicalise the nukta, repair the hamza carrier, normalise to clean NFC Unicode, and surface anything it isn't sure about. Crucially, it is measured against a hard rule in continuous integration: <strong>it must never make a page worse than raw Tesseract.</strong></p>
+      <p>That principle — <em>evidence-gated correction</em> — became gurmukhifix. It sits <em>after</em> OCR — any engine now: Tesseract, Surya, Gemini, Google Vision — and applies the rules the recognizer can't: reorder the sihari, canonicalise the nukta, normalise to clean NFC Unicode, and flag anything it isn't sure about. Two things make it <em>safe</em> rather than merely clever. A 67,000-word <strong>Gurbani lexicon</strong> locks verbatim scripture, so a real Gurbani word is never split or rewritten; and every substitution must carry positive evidence — a validity gain or a dictionary hit — so a blind guess between two valid letters is refused, not taken. That no-corruption guarantee is <strong>property-tested</strong> across every script and the entire Guru Granth Sahib in continuous integration.</p>
 
       <h2>Why all these scripts, together</h2>
       <p>The archives of north-west India don't come neatly sorted by script. A single shelf might hold Gurmukhi scripture, a Persian land record and an Urdu letter. Existing post-processing tools, where they existed at all, covered one script in isolation. We needed one pipeline that understood Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — sharing an engine, differing only in their rules. That's what gurmukhifix is.</p>
 
       <h2>The result</h2>
-      <p>On our benchmarks, the corrected output now improves character error rate substantially over raw Tesseract on the error cases, while leaving clean text untouched — and it never regresses. The text that comes out is canonical Unicode you can actually search, index and trust.</p>
-      <p>It is not a replacement for Tesseract, and it can't read handwriting that Tesseract fundamentally couldn't. It is the missing layer between "the OCR ran" and "the text is usable." For anyone trying to make six centuries of a region's writing searchable, that layer turned out to be the whole game.</p>
+      <p>On 300 real lines of Sri Guru Granth Sahib Ji with the most common OCR error injected, gurmukhifix drives character error rate to <strong>zero</strong> — and corrupts <strong>zero</strong> clean lines. It ships with 400+ tests, an honest reproducible benchmark, and a browser demo that will take an image or a whole PDF, OCR it, and clean the result — with nothing ever leaving your machine. The text that comes out is canonical Unicode you can actually search, index and trust.</p>
+      <p>It is not an OCR engine, and it can't recover handwriting the recognizer fundamentally couldn't read. It is the missing layer between "the OCR ran" and "the text is usable." For anyone trying to make six centuries of a region's writing searchable, that layer turned out to be the whole game.</p>
 
-      <p class="post-cta">gurmukhifix is free and open source under the MIT licence. <a href="../index.html#demo">Try the live demo</a> or <a href="${PYPI}" target="_blank" rel="noopener">pip install gurmukhifix</a>.</p>
+      <p class="post-cta">gurmukhifix is free and open source under the MIT licence. <a href="../index.html#demo">Try the live demo</a> or <a href="${PYPI}" target="_blank" rel="noopener">pip install gurmukhifix</a> — it's on PyPI.</p>
     </div>
   </article>`;
   return layout({
@@ -530,6 +540,18 @@ ${sectionHead("How it works", "gurmukhifix is a post-processor, not an OCR engin
       <article class="feature"><h3>Validity report</h3><p>Orphaned matras, impossible sequences and out-of-script code-points are surfaced with severity.</p></article>
       <article class="feature"><h3>Batch + learning</h3><p>Parallel batch processing and a SQLite store that promotes repeatedly-confirmed corrections.</p></article>
       <article class="feature"><h3>Layout preserved</h3><p>Bounding boxes flow through end-to-end so downstream tools can rebuild the page.</p></article>
+    </div>
+  </section>
+
+  <section class="saroop-showcase">
+${sectionHead("Larivaar &amp; padched — where words begin", 'Gurbani was written <em>larivaar</em>, one unbroken stream of letters, and later <em>padched</em> with a space between each word. Deciding where words begin is exactly what OCR gets wrong — and what gurmukhifix reasons about, gated against a verbatim Gurbani lexicon so a real scripture word is never split or rewritten.')}
+    <div class="saroop-wrap">
+      <figure class="saroop-figure">
+        <div class="saroop-grid">
+          <div><img src="assets/larivaar.png" alt="The Mool Mantar written larivaar — a continuous stream of Gurmukhi with no spaces between words" loading="lazy" /><figcaption>Larivaar — no word breaks</figcaption></div>
+          <div><img src="assets/padched.png" alt="The same Mool Mantar written padched — a space between every word" loading="lazy" /><figcaption>Padched — word-separated</figcaption></div>
+        </div>
+      </figure>
     </div>
   </section>
 

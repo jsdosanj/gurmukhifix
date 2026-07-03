@@ -418,6 +418,15 @@ textarea:focus-visible, .script-text:focus-visible, input:focus-visible {
 .card-tag.exp { color: #e0a94a; background: rgba(224, 169, 74, 0.12); border: 1px solid rgba(224, 169, 74, 0.35); }
 .pane-actions { display: inline-flex; gap: 8px; }
 
+/* Larivaar / padched Gurbani saroop figures (blog + homepage). */
+.saroop-wrap { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+.saroop-figure { margin: 30px 0; }
+.saroop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.saroop-grid img { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--panel-brd); display: block; }
+.saroop-grid figcaption { margin-top: 8px; text-align: center; font-size: 13px; color: var(--muted); }
+.saroop-cap { margin-top: 14px; text-align: center; font-size: 14px; color: var(--faint); max-width: 46em; margin-left: auto; margin-right: auto; }
+@media (max-width: 640px) { .saroop-grid { grid-template-columns: 1fr; } }
+
 /* Keep site navigation reachable on phones instead of hiding every link. */
 @media (max-width: 900px) {
   .nav-links { display: flex !important; flex-wrap: wrap; justify-content: flex-end; gap: 12px 16px; font-size: 13px; }
