@@ -466,7 +466,7 @@ function notFound() {
 // ── Home (ported, single-source nav/footer) ────────────────────────────────
 function homePage() {
   const scriptCards = SCRIPTS.map(
-    (s) => `<a class="script-card" href="scripts/${s.key}.html"><span class="glyph ${s.cls}">${s.glyph}</span><h3>${s.name}</h3><p>${s.blurb}</p><span class="more">Deep-dive →</span></a>`
+    (s) => `<a class="script-card" href="scripts/${s.key}.html"><span class="card-tag ${s.jsDemo ? "in-demo" : "exp"}">${s.jsDemo ? "In the demo" : "Experimental"}</span><span class="glyph ${s.cls}">${s.glyph}</span><h3>${s.name}</h3><p>${s.blurb}</p><span class="more">Deep-dive →</span></a>`
   ).join("\n        ");
 
   const body = `
@@ -499,15 +499,15 @@ ${sectionHead("Interactive playground", "Paste raw OCR text and watch it become 
     <div class="demo-toolbar">
       <label class="field"><span>Script</span><select id="script-select"></select></label>
       <div class="examples" id="examples"></div>
-      <button class="btn btn-ghost small" id="ocr-toggle" type="button">📷 Try image OCR <span class="exp">experimental</span></button>
+      <button class="btn btn-ghost small" id="ocr-toggle" type="button">📄 OCR an image or PDF</button>
     </div>
     <div class="ocr-panel" id="ocr-panel" hidden>
-      <p>Upload a photo or scan of a single line/word. In-browser OCR uses <a href="https://tesseract.projectnaptha.com/" target="_blank" rel="noopener">Tesseract.js</a>, then gurmukhifix cleans the result. <strong>Handwriting accuracy is limited</strong> — this demos the pipeline, not production OCR.</p>
-      <div class="ocr-row"><input type="file" id="ocr-file" accept="image/*" /><button class="btn btn-primary small" id="ocr-run" type="button" disabled>Run OCR → gurmukhifix</button><span class="ocr-status" id="ocr-status"></span></div>
+      <p>Drop in an <strong>image or a PDF</strong>. Digital PDFs are read straight from their text layer; scans and photos are OCR'd in your browser with <a href="https://tesseract.projectnaptha.com/" target="_blank" rel="noopener">Tesseract.js</a> (multi-page, up to 15), then cleaned by gurmukhifix. <strong>Everything runs locally — nothing is uploaded.</strong> Handwriting accuracy is limited; this demos the pipeline, not production OCR.</p>
+      <div class="ocr-row"><input type="file" id="ocr-file" accept="image/*,application/pdf,.pdf" /><button class="btn btn-primary small" id="ocr-run" type="button" disabled>Extract → gurmukhifix</button><span class="ocr-status" id="ocr-status"></span></div>
     </div>
     <div class="demo-grid">
       <div class="pane"><div class="pane-head"><span>Input — raw OCR</span></div><textarea id="input" class="script-text" spellcheck="false" aria-label="Raw OCR input" placeholder="Paste OCR output here…"></textarea></div>
-      <div class="pane"><div class="pane-head"><span>Output — clean Unicode</span><button class="copy-btn" id="copy-btn" type="button">Copy</button></div><div id="output" class="script-text output" aria-live="polite"></div></div>
+      <div class="pane"><div class="pane-head"><span>Output — clean Unicode</span><span class="pane-actions"><button class="copy-btn" id="download-btn" type="button">Download .txt</button><button class="copy-btn" id="copy-btn" type="button">Copy</button></span></div><div id="output" class="script-text output" aria-live="polite"></div></div>
     </div>
     <div class="report" id="report"></div>
   </section>
@@ -534,7 +534,7 @@ ${sectionHead("How it works", "gurmukhifix is a post-processor, not an OCR engin
   </section>
 
   <section class="scripts" id="scripts">
-${sectionHead("Six scripts, one pipeline", 'Shared engine, per-script rules with inheritance via <code>extends</code>. Click any script for a plain-English deep-dive.')}
+${sectionHead("Six scripts, one pipeline", 'One shared engine, per-script rules via <code>extends</code>. Gurmukhi, Punjabi, Hindi and Devanagari run in the demo above; Urdu &amp; Farsi ship in the package as experimental (structural-only). Click any script for a plain-English deep-dive.')}
     <div class="script-cards">
         ${scriptCards}
     </div>

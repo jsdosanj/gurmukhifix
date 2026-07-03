@@ -70,15 +70,15 @@
     <div class="demo-toolbar">
       <label class="field"><span>Script</span><select id="script-select"></select></label>
       <div class="examples" id="examples"></div>
-      <button class="btn btn-ghost small" id="ocr-toggle" type="button">📷 Try image OCR <span class="exp">experimental</span></button>
+      <button class="btn btn-ghost small" id="ocr-toggle" type="button">📄 OCR an image or PDF</button>
     </div>
     <div class="ocr-panel" id="ocr-panel" hidden>
-      <p>Upload a photo or scan of a single line/word. In-browser OCR uses <a href="https://tesseract.projectnaptha.com/" target="_blank" rel="noopener">Tesseract.js</a>, then gurmukhifix cleans the result. <strong>Handwriting accuracy is limited</strong> — this demos the pipeline, not production OCR.</p>
-      <div class="ocr-row"><input type="file" id="ocr-file" accept="image/*" /><button class="btn btn-primary small" id="ocr-run" type="button" disabled>Run OCR → gurmukhifix</button><span class="ocr-status" id="ocr-status"></span></div>
+      <p>Drop in an <strong>image or a PDF</strong>. Digital PDFs are read straight from their text layer; scans and photos are OCR'd in your browser with <a href="https://tesseract.projectnaptha.com/" target="_blank" rel="noopener">Tesseract.js</a> (multi-page, up to 15), then cleaned by gurmukhifix. <strong>Everything runs locally — nothing is uploaded.</strong> Handwriting accuracy is limited; this demos the pipeline, not production OCR.</p>
+      <div class="ocr-row"><input type="file" id="ocr-file" accept="image/*,application/pdf,.pdf" /><button class="btn btn-primary small" id="ocr-run" type="button" disabled>Extract → gurmukhifix</button><span class="ocr-status" id="ocr-status"></span></div>
     </div>
     <div class="demo-grid">
       <div class="pane"><div class="pane-head"><span>Input — raw OCR</span></div><textarea id="input" class="script-text" spellcheck="false" aria-label="Raw OCR input" placeholder="Paste OCR output here…"></textarea></div>
-      <div class="pane"><div class="pane-head"><span>Output — clean Unicode</span><button class="copy-btn" id="copy-btn" type="button">Copy</button></div><div id="output" class="script-text output" aria-live="polite"></div></div>
+      <div class="pane"><div class="pane-head"><span>Output — clean Unicode</span><span class="pane-actions"><button class="copy-btn" id="download-btn" type="button">Download .txt</button><button class="copy-btn" id="copy-btn" type="button">Copy</button></span></div><div id="output" class="script-text output" aria-live="polite"></div></div>
     </div>
     <div class="report" id="report"></div>
   </section>
@@ -105,14 +105,14 @@
   </section>
 
   <section class="scripts" id="scripts">
-    <div class="section-head"><h2>Six scripts, one pipeline</h2><p>Shared engine, per-script rules with inheritance via <code>extends</code>. Click any script for a plain-English deep-dive.</p></div>
+    <div class="section-head"><h2>Six scripts, one pipeline</h2><p>One shared engine, per-script rules via <code>extends</code>. Gurmukhi, Punjabi, Hindi and Devanagari run in the demo above; Urdu &amp; Farsi ship in the package as experimental (structural-only). Click any script for a plain-English deep-dive.</p></div>
     <div class="script-cards">
-        <a class="script-card" href="scripts/gurmukhi.html"><span class="glyph gur">ੴ</span><h3>Gurmukhi</h3><p>The script of Sikh scripture and one of the writing systems for Punjabi.</p><span class="more">Deep-dive →</span></a>
-        <a class="script-card" href="scripts/punjabi.html"><span class="glyph gur">ਪੰ</span><h3>Punjabi</h3><p>Punjabi written in the Gurmukhi script — it builds on every Gurmukhi rule.</p><span class="more">Deep-dive →</span></a>
-        <a class="script-card" href="scripts/hindi.html"><span class="glyph dev">हि</span><h3>Hindi</h3><p>Hindi written in the Devanagari script.</p><span class="more">Deep-dive →</span></a>
-        <a class="script-card" href="scripts/devanagari.html"><span class="glyph dev">दे</span><h3>Devanagari</h3><p>The shared base script behind Hindi, Marathi, Nepali and Sanskrit.</p><span class="more">Deep-dive →</span></a>
-        <a class="script-card" href="scripts/urdu.html"><span class="glyph ara">اُ</span><h3>Urdu</h3><p>Urdu in the Nasta'liq style — a connected, right-to-left script.</p><span class="more">Deep-dive →</span></a>
-        <a class="script-card" href="scripts/farsi.html"><span class="glyph ara">فا</span><h3>Farsi</h3><p>Persian (Farsi) — Arabic-script with Persian-specific letters.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/gurmukhi.html"><span class="card-tag in-demo">In the demo</span><span class="glyph gur">ੴ</span><h3>Gurmukhi</h3><p>The script of Sikh scripture and one of the writing systems for Punjabi.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/punjabi.html"><span class="card-tag in-demo">In the demo</span><span class="glyph gur">ਪੰ</span><h3>Punjabi</h3><p>Punjabi written in the Gurmukhi script — it builds on every Gurmukhi rule.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/hindi.html"><span class="card-tag in-demo">In the demo</span><span class="glyph dev">हि</span><h3>Hindi</h3><p>Hindi written in the Devanagari script.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/devanagari.html"><span class="card-tag in-demo">In the demo</span><span class="glyph dev">दे</span><h3>Devanagari</h3><p>The shared base script behind Hindi, Marathi, Nepali and Sanskrit.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/urdu.html"><span class="card-tag exp">Experimental</span><span class="glyph ara">اُ</span><h3>Urdu</h3><p>Urdu in the Nasta'liq style — a connected, right-to-left script.</p><span class="more">Deep-dive →</span></a>
+        <a class="script-card" href="scripts/farsi.html"><span class="card-tag exp">Experimental</span><span class="glyph ara">فا</span><h3>Farsi</h3><p>Persian (Farsi) — Arabic-script with Persian-specific letters.</p><span class="more">Deep-dive →</span></a>
     </div>
   </section>
 
