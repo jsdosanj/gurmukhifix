@@ -53,3 +53,6 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Cloudflare Wrangler local cache
+.wrangler/
