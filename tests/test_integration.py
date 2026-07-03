@@ -9,7 +9,6 @@ import pytest
 
 from gurmukhifix.integration import DocumentProcessor, TesseractOutput, process_document
 
-
 # ── Sample Tesseract-style JSON ──────────────────────────────────────────────
 
 SAMPLE_GURMUKHI_JSON = {

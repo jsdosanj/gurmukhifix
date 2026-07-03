@@ -53,11 +53,33 @@ function layout({ title, description, rel, active, body, home = false, canonical
   <meta property="og:title" content="${esc(title)}" />
   <meta property="og:description" content="${esc(description)}" />
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="${canonical || BASE_URL + "/"}" />
+  <meta property="og:image" content="${BASE_URL}/assets/og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${esc(title)}" />
+  <meta name="twitter:description" content="${esc(description)}" />
+  <meta name="twitter:image" content="${BASE_URL}/assets/og.png" />
+  <link rel="icon" href="${rel}assets/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="${rel}assets/apple-touch-icon.png" />
   <meta name="theme-color" content="#0a0b14" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600&family=Noto+Nastaliq+Urdu:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="${rel}assets/styles.css" />
+  <script type="application/ld+json">${JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "gurmukhifix",
+    applicationCategory: "DeveloperApplication",
+    operatingSystem: "Cross-platform (Python 3.10+)",
+    description,
+    url: BASE_URL + "/",
+    codeRepository: REPO,
+    downloadUrl: PYPI,
+    license: "https://spdx.org/licenses/MIT.html",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    author: { "@type": "Person", name: "Jasvant Singh Dosanjh" },
+  })}</script>
 </head>
 <body>
   <div class="bg-aurora" aria-hidden="true"></div>
@@ -450,17 +472,17 @@ function homePage() {
   const body = `
   <section class="hero" id="top">
     <div class="hero-inner">
-      <div class="badge">Tesseract post-processing engine</div>
+      <div class="badge">OCR post-processing engine</div>
       <h1>Clean Unicode for<br /><span class="grad">handwritten Gurmukhi</span> &amp; Indic scripts</h1>
-      <p class="lede">OCR mangles connected scripts: sihari lands before its consonant, nuktas drift, diacritics scatter. <strong>gurmukhifix</strong> repairs Tesseract output into well-formed Unicode for Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — and never corrupts text that was already correct.</p>
+      <p class="lede">OCR mangles connected scripts: sihari lands before its consonant, nuktas drift, diacritics scatter. <strong>gurmukhifix</strong> repairs OCR output — from Tesseract, Surya, Gemini or any engine — into well-formed Unicode. Gurmukhi and Indic scripts first (Urdu &amp; Farsi are experimental), and it <strong>never</strong> corrupts text that was already correct — including Gurbani.</p>
       <div class="hero-cta">
         <a class="btn btn-primary" href="#demo">Try the live demo</a>
         <a class="btn btn-ghost" href="${PYPI}" target="_blank" rel="noopener">pip install gurmukhifix</a>
       </div>
       <div class="hero-proof">
-        <div><b>+37.8%</b><span>avg CER improvement</span></div>
-        <div><b>6</b><span>scripts supported</span></div>
-        <div><b>0</b><span>corruption of clean text</span></div>
+        <div><b>0.00</b><span>corrected CER on 300 real SGGS lines</span></div>
+        <div><b>6</b><span>scripts — Gurmukhi/Indic first</span></div>
+        <div><b>0</b><span>silent corruptions, property-tested</span></div>
       </div>
     </div>
     <div class="hero-card">
@@ -473,6 +495,7 @@ function homePage() {
 
   <section class="demo" id="demo">
 ${sectionHead("Interactive playground", "Paste raw OCR text and watch it become clean, well-formed Unicode. Everything runs in your browser.")}
+    <p class="demo-note">This is a lightweight in-browser preview covering Gurmukhi, Punjabi, Hindi and Devanagari. The installable package is authoritative — it adds Gurbani dictionary-gating, a verbatim-scripture lock, and Urdu/Farsi. <a href="${PYPI}" target="_blank" rel="noopener">pip install gurmukhifix ↗</a></p>
     <div class="demo-toolbar">
       <label class="field"><span>Script</span><select id="script-select"></select></label>
       <div class="examples" id="examples"></div>
@@ -483,7 +506,7 @@ ${sectionHead("Interactive playground", "Paste raw OCR text and watch it become 
       <div class="ocr-row"><input type="file" id="ocr-file" accept="image/*" /><button class="btn btn-primary small" id="ocr-run" type="button" disabled>Run OCR → gurmukhifix</button><span class="ocr-status" id="ocr-status"></span></div>
     </div>
     <div class="demo-grid">
-      <div class="pane"><div class="pane-head"><span>Input — raw OCR</span></div><textarea id="input" class="script-text" spellcheck="false" placeholder="Paste OCR output here…"></textarea></div>
+      <div class="pane"><div class="pane-head"><span>Input — raw OCR</span></div><textarea id="input" class="script-text" spellcheck="false" aria-label="Raw OCR input" placeholder="Paste OCR output here…"></textarea></div>
       <div class="pane"><div class="pane-head"><span>Output — clean Unicode</span><button class="copy-btn" id="copy-btn" type="button">Copy</button></div><div id="output" class="script-text output" aria-live="polite"></div></div>
     </div>
     <div class="report" id="report"></div>
@@ -492,7 +515,7 @@ ${sectionHead("Interactive playground", "Paste raw OCR text and watch it become 
   <section class="how" id="how">
 ${sectionHead("How it works", "gurmukhifix is a post-processor, not an OCR engine. Tesseract turns the image into characters; gurmukhifix applies the linguistic rules Tesseract can't.")}
     <div class="pipeline">
-      <div class="step"><span class="step-n">1</span><h3>Image → Tesseract</h3><p>Run Tesseract with JSON output: characters, confidence and bounding boxes.</p></div>
+      <div class="step"><span class="step-n">1</span><h3>Image → OCR</h3><p>Run any engine — Tesseract (TSV/hOCR), Surya, Gemini, Google Vision. gurmukhifix reads them all.</p></div>
       <div class="step-arrow">→</div>
       <div class="step"><span class="step-n">2</span><h3>Confidence routing</h3><p>≥85% passes through, &lt;60% is flagged, the middle band is corrected.</p></div>
       <div class="step-arrow">→</div>
@@ -521,9 +544,9 @@ ${sectionHead("Six scripts, one pipeline", 'Shared engine, per-script rules with
 ${sectionHead("Get started", "Pure-Python, MIT-licensed and free for anyone. Tesseract is a peer dependency, not a runtime requirement.")}
     <div class="code-cards">
       <div class="code-card"><div class="code-head"><span>Install</span><button class="copy-btn" data-copy="pip install gurmukhifix">Copy</button></div><pre><code>pip install gurmukhifix</code></pre></div>
-      <div class="code-card"><div class="code-head"><span>Run Tesseract → gurmukhifix</span><button class="copy-btn" data-copy="tesseract page.tif out --oem 1 --psm 6 json
-gurmukhifix correct --input out.json --lang gurmukhi --output ./results">Copy</button></div><pre><code>tesseract page.tif out --oem 1 --psm 6 json
-gurmukhifix correct --input out.json \\
+      <div class="code-card"><div class="code-head"><span>Run Tesseract → gurmukhifix</span><button class="copy-btn" data-copy="tesseract page.png out --oem 1 --psm 6 tsv
+gurmukhifix correct --input out.tsv --lang gurmukhi --output ./results">Copy</button></div><pre><code>tesseract page.png out --oem 1 --psm 6 tsv
+gurmukhifix correct --input out.tsv \\
   --lang gurmukhi --output ./results</code></pre></div>
       <div class="code-card"><div class="code-head"><span>Batch a folder</span><button class="copy-btn" data-copy="gurmukhifix batch --input-dir ./pages --lang devanagari --workers 4">Copy</button></div><pre><code>gurmukhifix batch --input-dir ./pages \\
   --lang devanagari --workers 4</code></pre></div>

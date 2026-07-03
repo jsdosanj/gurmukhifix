@@ -39,7 +39,7 @@ class TesseractOutput(OCRDocument):
         super().__init__(doc.words, engine="tesseract-json", raw=data)
 
     @classmethod
-    def from_file(cls, path: Path | str) -> "TesseractOutput":
+    def from_file(cls, path: Path | str) -> TesseractOutput:
         try:
             with Path(path).open(encoding="utf-8") as fh:
                 data = json.load(fh)
@@ -48,7 +48,7 @@ class TesseractOutput(OCRDocument):
         return cls(data)
 
     @classmethod
-    def from_string(cls, text: str) -> "TesseractOutput":
+    def from_string(cls, text: str) -> TesseractOutput:
         try:
             data = json.loads(text)
         except json.JSONDecodeError as exc:
@@ -166,7 +166,7 @@ class DocumentProcessor:
                 self._ligature.reassemble, text, corrections_for_word
             )
             text, corrections_for_word = self._run_pass(
-                lambda t: self._diacritic.recover(t, alternatives),
+                lambda t, alts=alternatives: self._diacritic.recover(t, alts),
                 text,
                 corrections_for_word,
             )

@@ -60,3 +60,34 @@ python_functions = ["test_*"]
 
 [tool.setuptools.package-data]
 gurmukhifix = ["py.typed", "configs/*.yaml", "data/*.gz", "data/*.md", "samples/*.json"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = [".venv", "dist", "build", "docs"]
+
+[tool.ruff.lint]
+# E/F  = pycodestyle + pyflakes, I = import sorting, UP = pyupgrade,
+# B    = bugbear (likely bugs), SIM = readable simplifications.
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = [
+    "E203",   # whitespace before ':' — conflicts with common formatter output
+    "SIM105", # keep explicit try/except/pass instead of contextlib.suppress
+    "SIM108", # keep explicit if/else where it reads clearer than a ternary
+    "B905",   # zip() without strict= is fine for the intentional pairings here
+]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+# Enforce full annotation coverage inside the package itself.
+[[tool.mypy.overrides]]
+module = "gurmukhifix.*"
+disallow_untyped_defs = true
+
+# Third-party deps that ship no type information / stubs.
+[[tool.mypy.overrides]]
+module = ["regex.*", "yaml.*", "sklearn.*"]
+ignore_missing_imports = true

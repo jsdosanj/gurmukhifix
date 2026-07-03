@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from gurmukhifix.validator import ScriptValidator, validate_text, SEVERITY_REJECT, SEVERITY_WARN
+from gurmukhifix.validator import SEVERITY_REJECT, SEVERITY_WARN, ScriptValidator, validate_text
 
 
 class TestScriptValidatorGurmukhi:

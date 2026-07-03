@@ -29,7 +29,7 @@ class DiacriticRecovery:
     ) -> None:
         self.language = language
         self.config = _load_config(language)
-        self.norm_form: str = self.config.get("normalization", "NFC")
+        self.norm_form: Any = self.config.get("normalization", "NFC")
         self._validator = validator or ScriptValidator(language)
         self._gate = EvidenceGate(self._validator, lexicon)
 
@@ -222,7 +222,6 @@ class DiacriticRecovery:
         corrections: list[dict[str, Any]] = []
         hamza = "\u0621"
         ye = "\u06CC"      # Farsi ye
-        alef = "\u0627"
 
         result = list(text)
         i = 0

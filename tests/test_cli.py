@@ -10,7 +10,6 @@ from click.testing import CliRunner
 
 from gurmukhifix.cli import cli
 
-
 SAMPLE_JSON = {
     "words": [
         {"text": "ਸਤਿ", "conf": 70.0, "bbox": [0, 0, 50, 20], "alternatives": []},

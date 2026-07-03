@@ -1,5 +1,10 @@
 # gurmukhifix
 
+[![CI](https://github.com/jsdosanj/gurmukhifix/actions/workflows/ci.yml/badge.svg)](https://github.com/jsdosanj/gurmukhifix/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/gurmukhifix)](https://pypi.org/project/gurmukhifix/)
+![Python](https://img.shields.io/pypi/pyversions/gurmukhifix)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 > **Safe, evidence-gated OCR correction for Gurmukhi and other Indic scripts.**
 > Reverses the systematic Unicode-order and diacritic errors that OCR makes on
 > Gurmukhi (Punjabi), Hindi, and Devanagari — and is built so it can **never

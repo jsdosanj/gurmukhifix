@@ -96,7 +96,7 @@ class OCRDocument:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_tesseract_json(cls, data: Any) -> "OCRDocument":
+    def from_tesseract_json(cls, data: Any) -> OCRDocument:
         """Tesseract JSON: ``{"words": [...]}``, ``{"pages": [{"words": [...]}]}``, or a flat word."""
         if not isinstance(data, dict):
             raise ValueError(
@@ -127,7 +127,7 @@ class OCRDocument:
         return cls(words, engine="tesseract-json", raw=data)
 
     @classmethod
-    def from_tesseract_tsv(cls, text: str) -> "OCRDocument":
+    def from_tesseract_tsv(cls, text: str) -> OCRDocument:
         """Tesseract TSV (``--output-type tsv`` / ``image_to_data``)."""
         lines = text.splitlines()
         if not lines:
@@ -160,7 +160,7 @@ class OCRDocument:
         return cls(words, engine="tesseract-tsv")
 
     @classmethod
-    def from_hocr(cls, text: str) -> "OCRDocument":
+    def from_hocr(cls, text: str) -> OCRDocument:
         """hOCR (HTML with ``ocrx_word`` spans carrying ``bbox`` and ``x_wconf``)."""
         words: list[dict[str, Any]] = []
         # Anchor on spans whose own tag carries ocrx_word, so a wrapping ocr_line
@@ -183,8 +183,13 @@ class OCRDocument:
         return cls(words, engine="hocr")
 
     @classmethod
-    def from_alto(cls, text: str) -> "OCRDocument":
+    def from_alto(cls, text: str) -> OCRDocument:
         """ALTO XML (``<String CONTENT= WC= HPOS= VPOS= WIDTH= HEIGHT=/>``)."""
+        # Refuse a DTD / entity declarations outright: legitimate ALTO has none, and
+        # this closes the entity-expansion ("billion laughs") DoS on the XML parser.
+        head = text[:4096].lower()
+        if "<!doctype" in head or "<!entity" in head:
+            raise ValueError("ALTO input with a DTD or entity declarations is not accepted")
         try:
             root = ET.fromstring(text)
         except ET.ParseError as exc:
@@ -207,7 +212,7 @@ class OCRDocument:
         return cls(words, engine="alto")
 
     @classmethod
-    def from_surya(cls, data: Any) -> "OCRDocument":
+    def from_surya(cls, data: Any) -> OCRDocument:
         """Surya OCR JSON (pages of ``text_lines`` with ``text``/``confidence``/``bbox``)."""
         pages: list[dict[str, Any]] = []
         if isinstance(data, dict):
@@ -237,7 +242,7 @@ class OCRDocument:
         return cls(words, engine="surya")
 
     @classmethod
-    def from_google_vision(cls, data: Any) -> "OCRDocument":
+    def from_google_vision(cls, data: Any) -> OCRDocument:
         """Google Cloud Vision / Gemini document JSON."""
         resp = data
         if isinstance(data, dict) and isinstance(data.get("responses"), list) and data["responses"]:
@@ -268,12 +273,12 @@ class OCRDocument:
         return cls(words, engine="google-vision")
 
     @classmethod
-    def from_plain_text(cls, text: str, conf: float = DEFAULT_CONF) -> "OCRDocument":
+    def from_plain_text(cls, text: str, conf: float = DEFAULT_CONF) -> OCRDocument:
         """Plain UTF-8 text — whitespace tokenised, given a correction-band confidence."""
         return cls([_word(tok, conf, []) for tok in text.split()], engine="plain-text")
 
     @classmethod
-    def from_words(cls, items: list[dict[str, Any]]) -> "OCRDocument":
+    def from_words(cls, items: list[dict[str, Any]]) -> OCRDocument:
         """A generic list of ``{text, conf, bbox, alternatives}`` word dicts."""
         words = [
             _word(

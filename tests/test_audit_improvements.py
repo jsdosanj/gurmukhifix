@@ -143,6 +143,7 @@ class TestConfigCache:
 class TestBatchPaths:
     def test_batch_mirrors_relative_paths(self, tmp_path: Path) -> None:
         from click.testing import CliRunner
+
         from gurmukhifix.cli import cli
 
         word = {"words": [{"text": "ਸਤਿ", "conf": 70.0, "bbox": [], "alternatives": []}]}

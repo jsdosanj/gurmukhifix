@@ -104,7 +104,7 @@ def _resolve(language: str, _seen: tuple[str, ...] = ()) -> dict[str, Any]:
     return cfg
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _load_resolved(language: str) -> dict[str, Any]:
     """Parse + merge the config once per language (cached)."""
     return _resolve(language)

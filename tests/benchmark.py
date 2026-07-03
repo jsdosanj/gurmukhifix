@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import random
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -50,7 +49,7 @@ _CORPORA = {"gurbani_sggs.txt": "gurmukhi"}
 # ── Metrics ─────────────────────────────────────────────────────────────────
 
 
-def _edit_distance(a: "list[Any] | str", b: "list[Any] | str") -> int:
+def _edit_distance(a: list[Any] | str, b: list[Any] | str) -> int:
     if a == b:
         return 0
     la, lb = len(a), len(b)
@@ -190,8 +189,8 @@ def main() -> int:
     print("Scope: synthetic injection of a documented Tesseract error class on real")
     print("SGGS text — not end-to-end scan accuracy. See tests/benchmark.py docstring.\n")
 
-    regressions = [l for l, m in summary.items() if m["corrected_cer"] > m["baseline_cer"] + 1e-9]
-    corruptions = [l for l, m in summary.items() if m["clean_subset_corrupted"] > 1e-9]
+    regressions = [lang for lang, m in summary.items() if m["corrected_cer"] > m["baseline_cer"] + 1e-9]
+    corruptions = [lang for lang, m in summary.items() if m["clean_subset_corrupted"] > 1e-9]
     if regressions:
         print("✗ REGRESSION (corrected worse than raw OCR): " + ", ".join(sorted(regressions)))
         return 1

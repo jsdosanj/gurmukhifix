@@ -17,19 +17,19 @@ than guessed at.
 from __future__ import annotations
 
 import unicodedata
-from typing import Any
+from typing import Any, cast
 
 import regex
 
 from .config import load_config as _load_config
-from .evidence import BLOCKING_REASONS, EvidenceGate
+from .evidence import BLOCKING_REASONS, EvidenceGate, word_span
 from .lexicon import Lexicon
 from .validator import ScriptValidator
 
 
 def _normalize(text: str, form: str = "NFC") -> str:
     """Normalize Unicode text to the specified form."""
-    return unicodedata.normalize(form, text)
+    return unicodedata.normalize(cast("Any", form), text)
 
 
 class _PromotedRule:
@@ -53,11 +53,9 @@ class _PromotedRule:
             return False
         before = text[:start]
         after = text[start + len(self.wrong):]
-        if self.context_before and not before.endswith(self.context_before):
-            return False
-        if self.context_after and not after.startswith(self.context_after):
-            return False
-        return True
+        before_ok = not self.context_before or before.endswith(self.context_before)
+        after_ok = not self.context_after or after.startswith(self.context_after)
+        return before_ok and after_ok
 
 
 class CharacterCorrector:
@@ -199,8 +197,15 @@ class CharacterCorrector:
                 verdict = self._gate.judge_edit(text, candidate, start)
                 if verdict.reason in BLOCKING_REASONS:
                     accept = False
+                elif verdict.allowed:
+                    accept = True
                 else:
-                    accept = verdict.allowed or promoted.context_matches(text, start)
+                    # A confirmed context may authorise a same-validity swap, but
+                    # never on a word that is already a known dictionary word — that
+                    # is the one path a poisoned corrections DB could otherwise use
+                    # to silently turn one valid word into a different valid word.
+                    s, e = word_span(text, start)
+                    accept = promoted.context_matches(text, start) and not self._lexicon.is_word(text[s:e])
                 if accept:
                     corrections.append(
                         {

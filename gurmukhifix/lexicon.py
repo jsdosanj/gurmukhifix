@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import gzip
 import unicodedata
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 _DATA_DIR = Path(__file__).parent / "data"
@@ -35,7 +35,7 @@ _DATA_DIR = Path(__file__).parent / "data"
 _GURMUKHI_LANGS = frozenset({"gurmukhi", "punjabi"})
 
 
-@lru_cache(maxsize=None)
+@cache
 def _load(name: str) -> frozenset[str]:
     """Load a gzipped, newline-delimited word list into a normalized frozenset."""
     path = _DATA_DIR / f"{name}.txt.gz"

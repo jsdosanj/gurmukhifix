@@ -276,7 +276,7 @@ class CorrectionStore:
         """Close the database connection."""
         self._conn.close()
 
-    def __enter__(self) -> "CorrectionStore":
+    def __enter__(self) -> CorrectionStore:
         return self
 
     def __exit__(self, *_: Any) -> None:

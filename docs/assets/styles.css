@@ -380,3 +380,32 @@ section { scroll-margin-top: 80px; }
   color: var(--good); background: rgba(70, 211, 154, 0.12); border: 1px solid rgba(70, 211, 154, 0.4);
 }
 .cf-ok p { margin: 0; color: var(--ink); font-size: 16px; }
+
+/* ── Accessibility, Nastaliq & mobile-nav refinements (v0.2.0) ─────────────── */
+
+/* Lift the faint text to WCAG AA contrast on the dark background. */
+:root { --faint: #949cb5; }
+
+/* Restore a visible keyboard focus ring (previously suppressed with outline:none). */
+:focus-visible { outline: 2px solid #8b7cff; outline-offset: 2px; border-radius: 4px; }
+a:focus-visible, button:focus-visible, select:focus-visible,
+textarea:focus-visible, .script-text:focus-visible, input:focus-visible {
+  outline: 2px solid #8b7cff; outline-offset: 2px;
+}
+
+/* Urdu should render in Nasta'liq as the copy claims — Naskh is the fallback. */
+.ara { font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font); line-height: 2.1; }
+.doc-glyph.ara, .native.ara { font-family: "Noto Nastaliq Urdu", "Noto Naskh Arabic", var(--font); }
+
+.demo-note {
+  max-width: 60em; margin: -6px auto 22px; text-align: center;
+  color: var(--muted); font-size: 14px; line-height: 1.6;
+}
+.demo-note a { color: #a99cff; text-decoration: none; border-bottom: 1px solid rgba(169, 156, 255, 0.4); }
+.demo-note a:hover { border-bottom-color: #a99cff; }
+
+/* Keep site navigation reachable on phones instead of hiding every link. */
+@media (max-width: 900px) {
+  .nav-links { display: flex !important; flex-wrap: wrap; justify-content: flex-end; gap: 12px 16px; font-size: 13px; }
+  .nav-links a:not(.nav-cta) { display: inline !important; }
+}
