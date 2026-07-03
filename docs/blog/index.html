@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@600;700&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Naskh+Arabic:wght@400;600&family=Noto+Nastaliq+Urdu:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../assets/styles.css?v=2" />
+  <link rel="stylesheet" href="../assets/styles.css?v=3" />
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"gurmukhifix","applicationCategory":"DeveloperApplication","operatingSystem":"Cross-platform (Python 3.10+)","description":"Digitising thousands of north-west Indian manuscripts (1400s–today) exposed systematic, invisible OCR errors. Here's why Tesseract alone wasn't enough — and how evidence-gated correction fixed it.","url":"https://gurmukhifix.dosanjhlabs.com/","codeRepository":"https://github.com/jsdosanj/gurmukhifix","downloadUrl":"https://pypi.org/project/gurmukhifix/","license":"https://spdx.org/licenses/MIT.html","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Jasvant Singh Dosanjh"}}</script>
 </head>
 <body>
@@ -62,8 +62,8 @@
       <p>There is a second, deeper version of the same problem, and it is unique to Gurbani. Historically the Guru Granth Sahib was written <em>larivaar</em> — one unbroken stream of letters, with no spaces between words at all. Later <em>padched</em> ("word-split") saroops added the spaces to aid reading. OCR of either has to decide where one word ends and the next begins, and it gets that wrong constantly: fusing words that belong apart, or splitting one mid-cluster.</p>
       <figure class="saroop-figure">
         <div class="saroop-grid">
-          <div><img src="../assets/larivaar.png" alt="Mool Mantar written larivaar — a continuous stream of Gurmukhi with no spaces between words" loading="lazy" /><figcaption>Larivaar — no word breaks</figcaption></div>
-          <div><img src="../assets/padched.png" alt="The same Mool Mantar written padched — a space between every word" loading="lazy" /><figcaption>Padched — word-separated</figcaption></div>
+          <div><img src="../assets/larivaar.png?v=3" alt="Mool Mantar written larivaar — a continuous stream of Gurmukhi with no spaces between words" loading="lazy" /><figcaption>Larivaar — no word breaks</figcaption></div>
+          <div><img src="../assets/padched.png?v=3" alt="The same Mool Mantar written padched — a space between every word" loading="lazy" /><figcaption>Padched — word-separated</figcaption></div>
         </div>
         <figcaption class="saroop-cap">The same Mool Mantar. Word boundaries are precisely what OCR — and any search index built on it — has to get right, and precisely what gurmukhifix reasons about, gated against a verbatim Gurbani lexicon so a real scripture word is never split or rewritten.</figcaption>
       </figure>

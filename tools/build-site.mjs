@@ -16,8 +16,8 @@ const DOCS = resolve(ROOT, "docs");
 const BASE_URL = "https://gurmukhifix.dosanjhlabs.com";
 const REPO = "https://github.com/jsdosanj/gurmukhifix";
 const PYPI = "https://pypi.org/project/gurmukhifix/";
-// Bump when assets/*.css|*.js change, to bust browser caches on the next load.
-const ASSET_VER = "2";
+// Bump when assets (css/js/images) change, to bust browser caches on the next load.
+const ASSET_VER = "3";
 
 const write = (rel, content) => {
   const p = resolve(DOCS, rel);
@@ -385,8 +385,8 @@ function blogPage() {
       <p>There is a second, deeper version of the same problem, and it is unique to Gurbani. Historically the Guru Granth Sahib was written <em>larivaar</em> — one unbroken stream of letters, with no spaces between words at all. Later <em>padched</em> ("word-split") saroops added the spaces to aid reading. OCR of either has to decide where one word ends and the next begins, and it gets that wrong constantly: fusing words that belong apart, or splitting one mid-cluster.</p>
       <figure class="saroop-figure">
         <div class="saroop-grid">
-          <div><img src="../assets/larivaar.png" alt="Mool Mantar written larivaar — a continuous stream of Gurmukhi with no spaces between words" loading="lazy" /><figcaption>Larivaar — no word breaks</figcaption></div>
-          <div><img src="../assets/padched.png" alt="The same Mool Mantar written padched — a space between every word" loading="lazy" /><figcaption>Padched — word-separated</figcaption></div>
+          <div><img src="../assets/larivaar.png?v=${ASSET_VER}" alt="Mool Mantar written larivaar — a continuous stream of Gurmukhi with no spaces between words" loading="lazy" /><figcaption>Larivaar — no word breaks</figcaption></div>
+          <div><img src="../assets/padched.png?v=${ASSET_VER}" alt="The same Mool Mantar written padched — a space between every word" loading="lazy" /><figcaption>Padched — word-separated</figcaption></div>
         </div>
         <figcaption class="saroop-cap">The same Mool Mantar. Word boundaries are precisely what OCR — and any search index built on it — has to get right, and precisely what gurmukhifix reasons about, gated against a verbatim Gurbani lexicon so a real scripture word is never split or rewritten.</figcaption>
       </figure>
@@ -550,8 +550,8 @@ ${sectionHead("Larivaar &amp; padched — where words begin", 'Gurbani was writt
     <div class="saroop-wrap">
       <figure class="saroop-figure">
         <div class="saroop-grid">
-          <div><img src="assets/larivaar.png" alt="The Mool Mantar written larivaar — a continuous stream of Gurmukhi with no spaces between words" loading="lazy" /><figcaption>Larivaar — no word breaks</figcaption></div>
-          <div><img src="assets/padched.png" alt="The same Mool Mantar written padched — a space between every word" loading="lazy" /><figcaption>Padched — word-separated</figcaption></div>
+          <div><img src="assets/larivaar.png?v=${ASSET_VER}" alt="The Mool Mantar written larivaar — a continuous stream of Gurmukhi with no spaces between words" loading="lazy" /><figcaption>Larivaar — no word breaks</figcaption></div>
+          <div><img src="assets/padched.png?v=${ASSET_VER}" alt="The same Mool Mantar written padched — a space between every word" loading="lazy" /><figcaption>Padched — word-separated</figcaption></div>
         </div>
       </figure>
     </div>
