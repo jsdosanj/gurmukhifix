@@ -41,6 +41,9 @@
     </nav>
   </header>
 
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"gurmukhifix","url":"https://gurmukhifix.dosanjhlabs.com/","logo":"https://gurmukhifix.dosanjhlabs.com/assets/apple-touch-icon.png","description":"gurmukhifix is a free, open-source OCR post-processing engine for Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi.","sameAs":["https://github.com/jsdosanj/gurmukhifix","https://pypi.org/project/gurmukhifix/"],"parentOrganization":{"@type":"Organization","name":"Dosanjh Labs","url":"https://dosanjhlabs.com/"},"founder":{"@type":"Person","name":"Jasvant Singh Dosanjh"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"gurmukhifix","url":"https://gurmukhifix.dosanjhlabs.com/","description":"Free, open-source OCR post-processing for Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — corrects Tesseract, Surya, Gemini and Google Vision output into clean, well-formed Unicode.","inLanguage":"en","publisher":{"@type":"Organization","name":"gurmukhifix","url":"https://gurmukhifix.dosanjhlabs.com/"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is gurmukhifix free to use?","acceptedAnswer":{"@type":"Answer","text":"Yes. gurmukhifix is fully open source under the MIT licence — free for personal, academic, government or commercial use, including inside closed-source products. Install it from PyPI with pip install gurmukhifix."}},{"@type":"Question","name":"Can gurmukhifix corrupt text that's already correct?","acceptedAnswer":{"@type":"Answer","text":"No. Corrections are evidence-gated: a fix is applied only when it measurably improves script validity or matches a dictionary hit. Already-correct Unicode round-trips byte-for-byte, enforced by property tests in CI."}},{"@type":"Question","name":"Does it handle Gurbani and Sri Guru Granth Sahib text safely?","acceptedAnswer":{"@type":"Answer","text":"Yes. A 67,000-word Gurbani lexicon locks verbatim scripture so a real Gurbani word is never split or rewritten. On 300 real Sri Guru Granth Sahib Ji lines with the most common OCR error injected, gurmukhifix drives character error rate to 0.00 with zero corrupted lines."}},{"@type":"Question","name":"Which OCR engines does gurmukhifix work with?","acceptedAnswer":{"@type":"Answer","text":"Any of them — it's a post-processor, not an OCR engine. It reads output from Tesseract (TSV/hOCR), Surya, Gemini and Google Vision, then applies the linguistic correction rules those engines don't know."}},{"@type":"Question","name":"Which scripts are supported?","acceptedAnswer":{"@type":"Answer","text":"Gurmukhi, Punjabi, Hindi and Devanagari are production-ready and run in the browser demo. Urdu and Farsi ship in the Python package as experimental, structural-only support."}},{"@type":"Question","name":"How do I use gurmukhifix?","acceptedAnswer":{"@type":"Answer","text":"pip install gurmukhifix, then run gurmukhifix correct --input <ocr-output> --lang <script> for a single file, or gurmukhifix batch --input-dir <folder> --lang <script> --workers <n> for a folder — or try it instantly in the browser demo above, no install required."}}]}</script>
   <section class="hero" id="top">
     <div class="hero-inner">
       <div class="badge">OCR post-processing engine</div>
@@ -145,6 +148,18 @@ gurmukhifix correct --input out.tsv \
   --lang devanagari --workers 4</code></pre></div>
     </div>
   </section>
+
+  <section class="faq" id="faq">
+    <div class="section-head"><h2>Frequently asked questions</h2><p>Straight answers about the licence, safety guarantees, supported engines and scripts.</p></div>
+    <div class="faq-list">
+        <article class="faq-item"><h3>Is gurmukhifix free to use?</h3><p>Yes. gurmukhifix is fully open source under the MIT licence — free for personal, academic, government or commercial use, including inside closed-source products. Install it from PyPI with pip install gurmukhifix.</p></article>
+        <article class="faq-item"><h3>Can gurmukhifix corrupt text that's already correct?</h3><p>No. Corrections are evidence-gated: a fix is applied only when it measurably improves script validity or matches a dictionary hit. Already-correct Unicode round-trips byte-for-byte, enforced by property tests in CI.</p></article>
+        <article class="faq-item"><h3>Does it handle Gurbani and Sri Guru Granth Sahib text safely?</h3><p>Yes. A 67,000-word Gurbani lexicon locks verbatim scripture so a real Gurbani word is never split or rewritten. On 300 real Sri Guru Granth Sahib Ji lines with the most common OCR error injected, gurmukhifix drives character error rate to 0.00 with zero corrupted lines.</p></article>
+        <article class="faq-item"><h3>Which OCR engines does gurmukhifix work with?</h3><p>Any of them — it's a post-processor, not an OCR engine. It reads output from Tesseract (TSV/hOCR), Surya, Gemini and Google Vision, then applies the linguistic correction rules those engines don't know.</p></article>
+        <article class="faq-item"><h3>Which scripts are supported?</h3><p>Gurmukhi, Punjabi, Hindi and Devanagari are production-ready and run in the browser demo. Urdu and Farsi ship in the Python package as experimental, structural-only support.</p></article>
+        <article class="faq-item"><h3>How do I use gurmukhifix?</h3><p>pip install gurmukhifix, then run gurmukhifix correct --input &lt;ocr-output&gt; --lang &lt;script&gt; for a single file, or gurmukhifix batch --input-dir &lt;folder&gt; --lang &lt;script&gt; --workers &lt;n&gt; for a folder — or try it instantly in the browser demo above, no install required.</p></article>
+    </div>
+  </section>
   <footer class="footer">
     <div class="footer-inner">
       <div>
@@ -156,6 +171,7 @@ gurmukhifix correct --input out.tsv \
         <a href="scripts/">Scripts</a>
         <a href="blog/">Blog</a>
         <a href="license.html">Licence</a>
+        <a href="ai-policy.html">AI policy</a>
         <a href="https://github.com/jsdosanj/gurmukhifix" target="_blank" rel="noopener">GitHub</a>
         <a href="https://pypi.org/project/gurmukhifix/" target="_blank" rel="noopener">PyPI</a>
       </div>

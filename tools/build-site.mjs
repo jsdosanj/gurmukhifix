@@ -16,6 +16,9 @@ const DOCS = resolve(ROOT, "docs");
 const BASE_URL = "https://gurmukhifix.dosanjhlabs.com";
 const REPO = "https://github.com/jsdosanj/gurmukhifix";
 const PYPI = "https://pypi.org/project/gurmukhifix/";
+const DOSANJH_LABS_URL = "https://dosanjhlabs.com/";
+const CONTACT_EMAIL = "dots-whisks.6r@icloud.com";
+const LAST_MOD = "2026-07-07";
 // Bump when assets (css/js/images) change, to bust browser caches on the next load.
 const ASSET_VER = "3";
 
@@ -27,6 +30,17 @@ const write = (rel, content) => {
 };
 
 const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+// One JSON-LD <script> block. Used for the supplementary structured data
+// (Organization/WebSite on the homepage, BreadcrumbList on sub-pages, FAQPage
+// on the homepage) alongside the per-page SoftwareApplication block already
+// emitted by layout().
+const ld = (obj) => `<script type="application/ld+json">${JSON.stringify(obj)}</script>`;
+// items: array of [name, absoluteUrl] from Home down to the current page.
+const breadcrumbLd = (items) => ld({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: items.map(([name, url], i) => ({ "@type": "ListItem", position: i + 1, name, item: url })),
+});
 
 // ── Layout ──────────────────────────────────────────────────────────────────
 function layout({ title, description, rel, active, body, home = false, canonical }) {
@@ -107,6 +121,7 @@ ${body}
         <a href="${rel}scripts/">Scripts</a>
         <a href="${rel}blog/">Blog</a>
         <a href="${rel}license.html">Licence</a>
+        <a href="${rel}ai-policy.html">AI policy</a>
         <a href="${REPO}" target="_blank" rel="noopener">GitHub</a>
         <a href="${PYPI}" target="_blank" rel="noopener">PyPI</a>
       </div>
@@ -283,6 +298,7 @@ function scriptPage(s) {
     : `<a class="btn btn-primary" href="${PYPI}" target="_blank" rel="noopener">Use via the Python package →</a>`;
 
   const body = `
+  ${breadcrumbLd([["Home", `${BASE_URL}/`], ["Scripts", `${BASE_URL}/scripts/`], [s.name, `${BASE_URL}/scripts/${s.key}.html`]])}
   <section class="doc-hero">
     <div class="doc-wrap">
       <a class="back" href="../scripts/">← All scripts</a>
@@ -345,6 +361,7 @@ function scriptsIndex() {
     (s) => `<a class="doc-card" href="${s.key}.html"><span class="glyph ${s.cls}">${s.glyph}</span><h3>${s.name} <small class="${s.cls}">${s.native}</small></h3><p>${s.blurb}</p><span class="more">Read the deep-dive →</span></a>`
   ).join("\n        ");
   const body = `
+  ${breadcrumbLd([["Home", `${BASE_URL}/`], ["Scripts", `${BASE_URL}/scripts/`]])}
   <section class="doc-hero">
     <div class="doc-wrap"><h1>Scripts, explained</h1><p class="lead">A plain-English deep-dive into how gurmukhifix corrects each script, and why a post-processor beats raw Tesseract.</p></div>
   </section>
@@ -364,6 +381,7 @@ function scriptsIndex() {
 // ── Blog ────────────────────────────────────────────────────────────────────
 function blogPage() {
   const body = `
+  ${breadcrumbLd([["Home", `${BASE_URL}/`], ["Blog", `${BASE_URL}/blog/`]])}
   <article class="post">
     <div class="doc-wrap">
       <a class="back" href="../index.html">← Home</a>
@@ -440,6 +458,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.`;
   const body = `
+  ${breadcrumbLd([["Home", `${BASE_URL}/`], ["Licence", `${BASE_URL}/license.html`]])}
   <section class="doc-hero"><div class="doc-wrap"><h1>Free to use — MIT licence</h1><p class="lead">gurmukhifix is released under the MIT licence: the most permissive, widely-trusted open-source licence there is.</p></div></section>
   <section class="doc-section"><div class="doc-wrap">
     <h2>In plain English</h2>
@@ -476,12 +495,76 @@ function notFound() {
 }
 
 // ── Home (ported, single-source nav/footer) ────────────────────────────────
+// ── Homepage FAQ (real facts drawn from the copy above; feeds both the
+// visible FAQ section and its FAQPage JSON-LD, so the two never drift). ──────
+const FAQS = [
+  {
+    q: "Is gurmukhifix free to use?",
+    a: "Yes. gurmukhifix is fully open source under the MIT licence — free for personal, academic, government or commercial use, including inside closed-source products. Install it from PyPI with pip install gurmukhifix.",
+  },
+  {
+    q: "Can gurmukhifix corrupt text that's already correct?",
+    a: "No. Corrections are evidence-gated: a fix is applied only when it measurably improves script validity or matches a dictionary hit. Already-correct Unicode round-trips byte-for-byte, enforced by property tests in CI.",
+  },
+  {
+    q: "Does it handle Gurbani and Sri Guru Granth Sahib text safely?",
+    a: "Yes. A 67,000-word Gurbani lexicon locks verbatim scripture so a real Gurbani word is never split or rewritten. On 300 real Sri Guru Granth Sahib Ji lines with the most common OCR error injected, gurmukhifix drives character error rate to 0.00 with zero corrupted lines.",
+  },
+  {
+    q: "Which OCR engines does gurmukhifix work with?",
+    a: "Any of them — it's a post-processor, not an OCR engine. It reads output from Tesseract (TSV/hOCR), Surya, Gemini and Google Vision, then applies the linguistic correction rules those engines don't know.",
+  },
+  {
+    q: "Which scripts are supported?",
+    a: "Gurmukhi, Punjabi, Hindi and Devanagari are production-ready and run in the browser demo. Urdu and Farsi ship in the Python package as experimental, structural-only support.",
+  },
+  {
+    q: "How do I use gurmukhifix?",
+    a: "pip install gurmukhifix, then run gurmukhifix correct --input <ocr-output> --lang <script> for a single file, or gurmukhifix batch --input-dir <folder> --lang <script> --workers <n> for a folder — or try it instantly in the browser demo above, no install required.",
+  },
+];
+
 function homePage() {
   const scriptCards = SCRIPTS.map(
     (s) => `<a class="script-card" href="scripts/${s.key}.html"><span class="card-tag ${s.jsDemo ? "in-demo" : "exp"}">${s.jsDemo ? "In the demo" : "Experimental"}</span><span class="glyph ${s.cls}">${s.glyph}</span><h3>${s.name}</h3><p>${s.blurb}</p><span class="more">Deep-dive →</span></a>`
   ).join("\n        ");
 
+  const faqCards = FAQS.map((f) => `<article class="faq-item"><h3>${esc(f.q)}</h3><p>${esc(f.a)}</p></article>`).join("\n        ");
+
+  const orgLd = ld({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "gurmukhifix",
+    url: BASE_URL + "/",
+    logo: BASE_URL + "/assets/apple-touch-icon.png",
+    description: "gurmukhifix is a free, open-source OCR post-processing engine for Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi.",
+    sameAs: [REPO, PYPI],
+    parentOrganization: { "@type": "Organization", name: "Dosanjh Labs", url: DOSANJH_LABS_URL },
+    founder: { "@type": "Person", name: "Jasvant Singh Dosanjh" },
+  });
+  const websiteLd = ld({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "gurmukhifix",
+    url: BASE_URL + "/",
+    description: "Free, open-source OCR post-processing for Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — corrects Tesseract, Surya, Gemini and Google Vision output into clean, well-formed Unicode.",
+    inLanguage: "en",
+    publisher: { "@type": "Organization", name: "gurmukhifix", url: BASE_URL + "/" },
+  });
+  const faqLd = ld({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  });
+
   const body = `
+  ${orgLd}
+  ${websiteLd}
+  ${faqLd}
   <section class="hero" id="top">
     <div class="hero-inner">
       <div class="badge">OCR post-processing engine</div>
@@ -580,6 +663,13 @@ gurmukhifix correct --input out.tsv \\
       <div class="code-card"><div class="code-head"><span>Batch a folder</span><button class="copy-btn" data-copy="gurmukhifix batch --input-dir ./pages --lang devanagari --workers 4">Copy</button></div><pre><code>gurmukhifix batch --input-dir ./pages \\
   --lang devanagari --workers 4</code></pre></div>
     </div>
+  </section>
+
+  <section class="faq" id="faq">
+${sectionHead("Frequently asked questions", "Straight answers about the licence, safety guarantees, supported engines and scripts.")}
+    <div class="faq-list">
+        ${faqCards}
+    </div>
   </section>`;
   return layout({
     title: "gurmukhifix — OCR post-processing for South Asian & Persian scripts",
@@ -588,19 +678,327 @@ gurmukhifix correct --input out.tsv \\
   });
 }
 
-// ── Sitemap + robots ────────────────────────────────────────────────────────
+// ── AI & content-usage policy page ─────────────────────────────────────────
+function aiPolicyPage() {
+  const body = `
+  ${breadcrumbLd([["Home", `${BASE_URL}/`], ["AI policy", `${BASE_URL}/ai-policy.html`]])}
+  <section class="doc-hero">
+    <div class="doc-wrap">
+      <h1>AI &amp; content-usage policy</h1>
+      <p class="lead">gurmukhifix is built to be found, quoted and recommended by AI assistants — and to stay out of the datasets used to train them. This page explains, plainly, what AI systems may and may not do with this website's content, and how to license it.</p>
+      <p class="muted" style="margin-top:-.4rem">Last updated 7 July 2026 · Applies to <strong>gurmukhifix.dosanjhlabs.com</strong></p>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <div class="doc-wrap">
+      <p class="post-cta"><strong>In one line:</strong> AI search and answer engines are <strong>welcome to read, index and cite</strong> this website to help people find gurmukhifix. Using its written content to <strong>train, fine-tune, or build datasets/RAG corpora</strong> for AI models is <strong>reserved</strong> and requires a licence. (The gurmukhifix <em>software</em> is separately MIT-licensed — see below.)</p>
+      <div class="problem-grid">
+        <article class="problem"><h3>✓ Welcomed</h3><p>Reading and indexing these pages, answering a user's question from them, quoting short passages <strong>with a link back to the source</strong>, and surfacing gurmukhifix in AI-powered search. This drives people to a free, open-source tool — exactly what we want.</p></article>
+        <article class="problem"><h3>⚠ Reserved</h3><p>Automated collection of this website's content for <strong>AI/ML model training, fine-tuning, distillation, embedding-index or RAG-corpus building, or any dataset creation</strong> — whether by a crawler, an API, or a third-party dataset. Not permitted without a written licence.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="doc-section alt">
+    <div class="doc-wrap">
+      <h2>Why we draw the line here</h2>
+      <p class="lead">The deep-dives on this site — into how Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi OCR correction actually works, and the story behind why gurmukhifix exists — are original writing, published for free so researchers, archivists and digitisation teams can use the tool well. We're glad when an assistant points someone here. But large-scale ingestion of that writing into a training set, where it's absorbed, un-attributed, and resold as a model's own output, is a different act. We reserve it — that keeps referral traffic flowing while protecting the thing that makes the site worth citing.</p>
+      <p class="muted">Note: the gurmukhifix <em>Python package</em> is MIT-licensed and free to use, copy, modify and redistribute — including inside AI tooling and pipelines built on it. This policy is about the <em>website's written content</em>, not the source code. See the <a href="license.html">licence page</a>.</p>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <div class="doc-wrap">
+      <h2>How this policy is expressed (machine-readable)</h2>
+      <p class="lead">The same reservation is declared through every current standard so automated agents can honour it without guessing:</p>
+      <table class="ex-table">
+        <thead><tr><th>Channel</th><th>Where</th><th>What it says</th></tr></thead>
+        <tbody>
+          <tr><td><strong>robots.txt</strong></td><td><a href="/robots.txt">/robots.txt</a></td><td>Allows general search and AI answer/search agents; disallows named AI training &amp; dataset crawlers.</td></tr>
+          <tr><td><strong>TDM Reservation Protocol</strong> (W3C)</td><td><a href="/.well-known/tdmrep.json">/.well-known/tdmrep.json</a></td><td><code>tdm-reservation: 1</code> for the whole site — text &amp; data mining rights reserved.</td></tr>
+          <tr><td><strong>AIPREF</strong> (IETF)</td><td><code>Content-Usage</code> response header</td><td><code>train-ai=n, search=y</code> — training declined, search permitted.</td></tr>
+          <tr><td><strong>noai / noimageai</strong></td><td><code>X-Robots-Tag</code> response header</td><td>Publisher AI-training opt-out. Carries no <code>noindex</code> — search indexing stays fully on.</td></tr>
+          <tr><td><strong>ai.txt</strong></td><td><a href="/ai.txt">/ai.txt</a></td><td>Human- and machine-readable summary of this policy.</td></tr>
+          <tr><td><strong>llms.txt</strong></td><td><a href="/llms.txt">/llms.txt</a></td><td>A curated overview to help assistants describe and cite gurmukhifix accurately. Grants no training rights.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="doc-section alt">
+    <div class="doc-wrap">
+      <h2>Agents we welcome vs. decline</h2>
+      <p class="lead">Our <a href="/robots.txt">robots.txt</a> is the authoritative list. In summary:</p>
+      <div class="problem-grid">
+        <article class="problem"><h3>Welcomed (answer / search)</h3><p>General search engines (Googlebot, Bingbot, DuckDuckBot), and AI answer/search agents including <strong>OAI-SearchBot</strong> &amp; <strong>ChatGPT-User</strong> (OpenAI), <strong>Claude-SearchBot</strong> &amp; <strong>Claude-User</strong> (Anthropic), <strong>PerplexityBot</strong> &amp; <strong>Perplexity-User</strong>, <strong>Applebot</strong>, <strong>DuckAssistBot</strong>, and Amazon's/Meta's/Mistral's search-and-user agents — all of which cite and link back.</p></article>
+        <article class="problem"><h3>Declined (training / dataset)</h3><p>Training and dataset crawlers including <strong>GPTBot</strong>, <strong>ClaudeBot</strong>, <strong>Google-Extended</strong>, <strong>Applebot-Extended</strong>, <strong>Meta-ExternalAgent</strong>, <strong>CCBot</strong> (Common Crawl), <strong>Bytespider</strong>, <strong>Amazonbot</strong>, <strong>cohere-ai</strong>, <strong>Diffbot</strong>, and other dataset/scraper bots. <span class="muted">Google-Extended and Applebot-Extended are training opt-outs only — blocking them does not affect Google or Apple search.</span></p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <div class="doc-wrap">
+      <h2>Licensing</h2>
+      <p class="lead">Want to use this website's content in a training set, an evaluation benchmark, a retrieval corpus, or another product? That's often possible under licence. Reach out and tell us what you have in mind.</p>
+      <p><a class="btn btn-primary" href="mailto:${CONTACT_EMAIL}">Contact us about licensing →</a></p>
+      <p class="post-cta">Honest disclaimer: gurmukhifix's <em>software</em> is MIT-licensed — free for anyone to use, copy, modify, redistribute or build on, including in AI systems. This page's reservation applies only to the website's written content (this policy, the homepage copy, the blog post and the script deep-dives), which is © 2026 Jasvant Singh Dosanjh / Dosanjh Labs. Nothing here is legal advice.</p>
+    </div>
+  </section>
+  <section class="doc-cta"><div class="doc-wrap"><a class="btn btn-ghost" href="index.html">← Back to gurmukhifix</a></div></section>`;
+  return layout({
+    title: "AI & content-usage policy — gurmukhifix",
+    description: "How AI systems may use gurmukhifix's website: answer engines are welcome to read and cite it; use for AI/ML training or dataset creation is reserved. Read the policy and how to license.",
+    rel: "", active: "", body, canonical: `${BASE_URL}/ai-policy.html`,
+  });
+}
+
+// ── Sitemap + AI-crawler robots.txt ────────────────────────────────────────
 function sitemap() {
+  // [loc, changefreq, priority] — homepage highest, in-demo scripts next,
+  // experimental scripts/blog/legal pages lower. All indexable, none noindex.
   const urls = [
-    "/", "/scripts/", "/blog/", "/license.html",
-    ...SCRIPTS.map((s) => `/scripts/${s.key}.html`),
+    ["/", "weekly", "1.0"],
+    ["/scripts/", "monthly", "0.8"],
+    ["/scripts/gurmukhi.html", "monthly", "0.8"],
+    ["/scripts/punjabi.html", "monthly", "0.8"],
+    ["/scripts/hindi.html", "monthly", "0.8"],
+    ["/scripts/devanagari.html", "monthly", "0.8"],
+    ["/scripts/urdu.html", "monthly", "0.6"],
+    ["/scripts/farsi.html", "monthly", "0.6"],
+    ["/blog/", "monthly", "0.6"],
+    ["/license.html", "yearly", "0.4"],
+    ["/ai-policy.html", "yearly", "0.3"],
   ];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map((u) => `  <url><loc>${BASE_URL}${u}</loc></url>`).join("\n")}
+${urls.map(([u, cf, p]) => `  <url>\n    <loc>${BASE_URL}${u}</loc>\n    <lastmod>${LAST_MOD}</lastmod>\n    <changefreq>${cf}</changefreq>\n    <priority>${p}</priority>\n  </url>`).join("\n")}
 </urlset>
 `;
 }
-const robots = `User-agent: *\nAllow: /\nSitemap: ${BASE_URL}/sitemap.xml\n`;
+
+// robots.txt: general search stays fully open (no site-wide Disallow); AI
+// answer/search agents are explicitly allowed (they cite + drive traffic);
+// AI training/dataset crawlers are disallowed (content reserved — see
+// /ai-policy.html). Same reservation is echoed in tdmrep.json, ai.txt,
+// llms.txt and the _headers response headers.
+const robots = `# gurmukhifix — robots.txt
+# Full policy: ${BASE_URL}/ai-policy.html
+#
+# Policy in one paragraph:
+#   1. Everyone — including Google, Bing, DuckDuckGo and every general search
+#      engine — may crawl and index the whole site. We WANT search + AI-answer
+#      referral traffic, so there is NO site-wide Disallow.
+#   2. AI *answer / search* agents that fetch a page to answer a user and CITE
+#      the source back to us are explicitly welcomed (ALLOW group below).
+#   3. AI *training / dataset* crawlers are asked not to collect this site:
+#      the website's written content is reserved against AI/ML model training
+#      and dataset creation (BLOCK group below). This reservation is also
+#      declared in /.well-known/tdmrep.json, /ai.txt, /llms.txt, and the
+#      response headers "X-Robots-Tag: noai, noimageai" and
+#      "Content-Usage: train-ai=n, search=y".
+#      Note: the gurmukhifix Python package itself is separately MIT-licensed
+#      and free to use, copy, modify, redistribute and train on — this
+#      reservation covers only this website's original written content.
+#   Content licensing: ${BASE_URL}/ai-policy.html
+
+# --- Default: every crawler may read everything (no site-wide Disallow). ---
+# General search crawlers (Googlebot, Bingbot, DuckDuckBot, etc.) rely on this.
+User-agent: *
+Allow: /
+
+# =====================================================================
+# ALLOW — AI answer/search agents. These fetch pages to answer a user's
+# question and link/cite the source, which drives traffic to gurmukhifix.
+# They are explicitly permitted (belt-and-suspenders; already allowed by *).
+# =====================================================================
+# OpenAI — search surfacing + user-triggered fetch
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+# Anthropic — search + user-triggered fetch
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+# Perplexity — search index (not used for foundation-model training) + user fetch
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+# Apple — Siri / Spotlight / Safari suggestions
+User-agent: Applebot
+# Amazon — search + Alexa fetch (the newer split-out bots; NOT training-capable Amazonbot)
+User-agent: Amzn-SearchBot
+User-agent: Amzn-User
+# Meta — AI search index + user fetch (NOT the training Meta-ExternalAgent)
+User-agent: meta-webindexer
+User-agent: meta-externalfetcher
+# Mistral — search index + user fetch (neither is used for training)
+User-agent: MistralAI-Index
+User-agent: MistralAI-User
+# DuckDuckGo — AI-assist answers that cite sources (not used for training)
+User-agent: DuckAssistBot
+Allow: /
+
+# =====================================================================
+# BLOCK — AI training / dataset-collection crawlers. Content here is
+# reserved against model training, fine-tuning, and dataset creation.
+# Note: Google-Extended and Applebot-Extended are training opt-out control
+# tokens, NOT crawlers — disallowing them opts out of Gemini / Apple
+# Intelligence training WITHOUT affecting Google or Apple search.
+# =====================================================================
+# OpenAI foundation-model training
+User-agent: GPTBot
+# Anthropic training (current + legacy tokens)
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: Claude-Web
+# Google Gemini / Vertex AI training (does NOT affect Google Search)
+User-agent: Google-Extended
+# Apple Intelligence training (does NOT affect Applebot search)
+User-agent: Applebot-Extended
+# Meta AI training
+User-agent: Meta-ExternalAgent
+User-agent: FacebookBot
+# Amazon — leans training ("may be used to train Amazon AI models")
+User-agent: Amazonbot
+# Common Crawl — open corpus widely reused to train LLMs
+User-agent: CCBot
+# ByteDance
+User-agent: Bytespider
+# Cohere
+User-agent: cohere-ai
+User-agent: cohere-training-data-crawler
+# Diffbot
+User-agent: Diffbot
+# Webz.io / Omgili — dataset crawlers for AI training
+User-agent: Omgilibot
+User-agent: Omgili
+User-agent: webzio-extended
+# Huawei — PetalBot search data may feed PanGu; PanguBot trains PanGu
+User-agent: PetalBot
+User-agent: PanguBot
+# You.com — dual-use answer engine that also trains models
+User-agent: YouBot
+# Image-dataset crawler (ImageSift / Hive)
+User-agent: ImagesiftBot
+# Misc dataset / ML-insight crawlers
+User-agent: VelenPublicWebCrawler
+User-agent: Timpibot
+# Generic scraping framework
+User-agent: Scrapy
+Disallow: /
+
+Sitemap: ${BASE_URL}/sitemap.xml
+`;
+
+// W3C TDM Reservation Protocol — https://www.w3.org/community/reports/tdmrep/
+const tdmrep = JSON.stringify([
+  { location: "/", "tdm-reservation": 1, "tdm-policy": `${BASE_URL}/ai-policy.html` },
+], null, 2) + "\n";
+
+const aiTxt = `# ai.txt — AI usage statement for gurmukhifix (${BASE_URL})
+# Human- and machine-readable. Last updated: ${LAST_MOD}.
+# Full policy: ${BASE_URL}/ai-policy.html
+# See also: /robots.txt, /.well-known/tdmrep.json, /llms.txt, and the
+# X-Robots-Tag: noai, noimageai and Content-Usage response headers.
+
+Site: ${BASE_URL}
+Owner: Dosanjh Labs
+Policy: ${BASE_URL}/ai-policy.html
+Contact: mailto:${CONTACT_EMAIL}
+Updated: ${LAST_MOD}
+
+# ---------------------------------------------------------------------------
+# PERMITTED — AI search / answer engines are welcome
+# ---------------------------------------------------------------------------
+# Reading, indexing, and CITING this site to answer user queries and refer
+# people back to gurmukhifix is explicitly permitted and encouraged. Real-time
+# retrieval by assistant/search agents that link to the source is welcome.
+Search: allow
+Answer-engine-citation: allow
+Quotation-with-attribution: allow
+
+# ---------------------------------------------------------------------------
+# RESERVED — not permitted without a written license (website content only)
+# ---------------------------------------------------------------------------
+# Automated collection of this website's WRITTEN CONTENT (this overview, the
+# blog post, the script deep-dives) for AI/ML model TRAINING, fine-tuning,
+# distillation, RAG-corpus building, embedding-index creation, or any dataset
+# creation is NOT permitted. All text & data mining rights over the site's
+# prose are reserved under the TDM Reservation Protocol (see
+# /.well-known/tdmrep.json) and expressed via the IETF AIPREF vocabulary as:
+# train-ai=n, search=y.
+Train-ai: disallow
+Fine-tuning: disallow
+Dataset-collection: disallow
+RAG-corpus-ingestion: disallow
+TDM-reservation: 1
+
+# ---------------------------------------------------------------------------
+# THE SOFTWARE ITSELF IS SEPARATELY MIT-LICENSED
+# ---------------------------------------------------------------------------
+# gurmukhifix the Python package (source on GitHub, distributed on PyPI) is
+# MIT-licensed open-source software: free to use, copy, modify, redistribute
+# and yes, train on, same as any other MIT-licensed code. The reservation
+# above applies only to this website's original written content, not to the
+# package's source code or its own OSS licence terms.
+Software-license: MIT
+Source: ${REPO}
+
+# ---------------------------------------------------------------------------
+# LICENSING (website content)
+# ---------------------------------------------------------------------------
+# The website's written content is original and copyrighted (© 2026 Jasvant
+# Singh Dosanjh / Dosanjh Labs). Training/dataset licenses for that content
+# are available — inquire via the contact above.
+License-inquiries: mailto:${CONTACT_EMAIL}
+`;
+
+const llmsTxt = `# gurmukhifix
+
+> gurmukhifix is a free, open-source Python package and OCR post-processing engine that corrects Tesseract (and other engines') output for Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — reordering misplaced sihari, canonicalising nukta order, and normalising to clean, well-formed Unicode. It never corrupts text that was already correct, including verbatim Gurbani, and ships with a browser-based interactive demo alongside the installable PyPI package.
+
+gurmukhifix is published by Dosanjh Labs at ${BASE_URL} and on PyPI at ${PYPI}. It is MIT-licensed open-source software — free for any use, including commercial use and AI/ML tooling built on the package itself. The website's written content (this overview, the blog post, and the script deep-dives) is separately reserved against AI/ML training; see the AI & content-usage policy below.
+
+AI usage: AI search and answer engines are welcome to read and CITE these pages so people can discover gurmukhifix. Using the website's written content for AI/ML model training, fine-tuning, RAG-corpus building, or dataset creation is reserved and requires a licence — see ${BASE_URL}/ai-policy.html and ${BASE_URL}/.well-known/tdmrep.json. This llms.txt aids accurate citation only; it grants no additional training rights beyond the MIT-licensed source code itself.
+
+## Product
+
+- [Home & interactive demo](${BASE_URL}/): Paste raw OCR text and watch it become clean Unicode, entirely in the browser; install instructions and feature overview.
+- [Scripts overview](${BASE_URL}/scripts/): Index of plain-English deep-dives into how gurmukhifix corrects each supported script.
+- [Gurmukhi OCR correction](${BASE_URL}/scripts/gurmukhi.html): Sihari reordering, nukta canonicalisation and aspirated-pair fixes for the script of Sikh scripture.
+- [Punjabi OCR correction](${BASE_URL}/scripts/punjabi.html): Punjabi-specific rules (loanword nukta letters, tippi/bindi) layered on the Gurmukhi rule set.
+- [Hindi OCR correction](${BASE_URL}/scripts/hindi.html): Matra-attachment validity checks and nasalisation fixes for Devanagari-script Hindi.
+- [Devanagari OCR correction](${BASE_URL}/scripts/devanagari.html): Shared Devanagari rules for Marathi, Nepali and Sanskrit text.
+- [Urdu OCR correction](${BASE_URL}/scripts/urdu.html): Experimental Nasta'liq-script correction (nukta placement, hamza carriers).
+- [Farsi OCR correction](${BASE_URL}/scripts/farsi.html): Experimental Persian-script correction (yeh/kaf variants, Persian-specific letters).
+- [Blog: why we built gurmukhifix](${BASE_URL}/blog/): The field story of digitising north-west Indian manuscripts and the evidence-gated correction approach it produced.
+- [Licence (MIT)](${BASE_URL}/license.html): Full MIT licence text and what it permits.
+
+## Install & source
+
+- [PyPI package](${PYPI}): pip install gurmukhifix — the authoritative package (the browser demo is a lightweight preview).
+- [Source code](${REPO}): GitHub repository, issues and contribution guide.
+
+## Optional
+
+- [AI & content-usage policy](${BASE_URL}/ai-policy.html): What AI systems may and may not do with gurmukhifix's website content, and how to license it.
+- [Sitemap](${BASE_URL}/sitemap.xml): Full list of indexable pages.
+`;
+
+// Cloudflare Pages response headers. Only the AI-usage signals (no existing
+// _headers file to preserve). MUST NOT include noindex/nofollow — search
+// indexing stays fully on; only AI/ML training is opted out. See /ai-policy.html.
+const headersFile = `# gurmukhifix — Cloudflare Pages headers.
+# AI-usage signals (full explanation: /ai-policy.html). Search indexing stays
+# fully ON (no noindex/nofollow anywhere); only AI/ML TRAINING is opted out.
+#   X-Robots-Tag: noai, noimageai        → publisher AI-training opt-out.
+#   Content-Usage: train-ai=n, search=y  → IETF AIPREF (draft-ietf-aipref-vocab).
+#   TDM-Reservation / TDM-Policy          → W3C TDM Reservation Protocol signal
+#     (full rule set in /.well-known/tdmrep.json).
+/*
+  X-Robots-Tag: noai, noimageai
+  Content-Usage: train-ai=n, search=y
+  TDM-Reservation: 1
+  TDM-Policy: ${BASE_URL}/ai-policy.html
+`;
 
 // ── Build ───────────────────────────────────────────────────────────────────
 write("index.html", homePage());
@@ -608,7 +1006,12 @@ write("scripts/index.html", scriptsIndex());
 SCRIPTS.forEach((s) => write(`scripts/${s.key}.html`, scriptPage(s)));
 write("blog/index.html", blogPage());
 write("license.html", licensePage());
+write("ai-policy.html", aiPolicyPage());
 write("404.html", notFound());
 write("sitemap.xml", sitemap());
 write("robots.txt", robots);
+write(".well-known/tdmrep.json", tdmrep);
+write("ai.txt", aiTxt);
+write("llms.txt", llmsTxt);
+write("_headers", headersFile);
 console.log("\nSite built into docs/");

@@ -1,0 +1,30 @@
+# gurmukhifix
+
+> gurmukhifix is a free, open-source Python package and OCR post-processing engine that corrects Tesseract (and other engines') output for Gurmukhi, Punjabi, Hindi, Devanagari, Urdu and Farsi — reordering misplaced sihari, canonicalising nukta order, and normalising to clean, well-formed Unicode. It never corrupts text that was already correct, including verbatim Gurbani, and ships with a browser-based interactive demo alongside the installable PyPI package.
+
+gurmukhifix is published by Dosanjh Labs at https://gurmukhifix.dosanjhlabs.com and on PyPI at https://pypi.org/project/gurmukhifix/. It is MIT-licensed open-source software — free for any use, including commercial use and AI/ML tooling built on the package itself. The website's written content (this overview, the blog post, and the script deep-dives) is separately reserved against AI/ML training; see the AI & content-usage policy below.
+
+AI usage: AI search and answer engines are welcome to read and CITE these pages so people can discover gurmukhifix. Using the website's written content for AI/ML model training, fine-tuning, RAG-corpus building, or dataset creation is reserved and requires a licence — see https://gurmukhifix.dosanjhlabs.com/ai-policy.html and https://gurmukhifix.dosanjhlabs.com/.well-known/tdmrep.json. This llms.txt aids accurate citation only; it grants no additional training rights beyond the MIT-licensed source code itself.
+
+## Product
+
+- [Home & interactive demo](https://gurmukhifix.dosanjhlabs.com/): Paste raw OCR text and watch it become clean Unicode, entirely in the browser; install instructions and feature overview.
+- [Scripts overview](https://gurmukhifix.dosanjhlabs.com/scripts/): Index of plain-English deep-dives into how gurmukhifix corrects each supported script.
+- [Gurmukhi OCR correction](https://gurmukhifix.dosanjhlabs.com/scripts/gurmukhi.html): Sihari reordering, nukta canonicalisation and aspirated-pair fixes for the script of Sikh scripture.
+- [Punjabi OCR correction](https://gurmukhifix.dosanjhlabs.com/scripts/punjabi.html): Punjabi-specific rules (loanword nukta letters, tippi/bindi) layered on the Gurmukhi rule set.
+- [Hindi OCR correction](https://gurmukhifix.dosanjhlabs.com/scripts/hindi.html): Matra-attachment validity checks and nasalisation fixes for Devanagari-script Hindi.
+- [Devanagari OCR correction](https://gurmukhifix.dosanjhlabs.com/scripts/devanagari.html): Shared Devanagari rules for Marathi, Nepali and Sanskrit text.
+- [Urdu OCR correction](https://gurmukhifix.dosanjhlabs.com/scripts/urdu.html): Experimental Nasta'liq-script correction (nukta placement, hamza carriers).
+- [Farsi OCR correction](https://gurmukhifix.dosanjhlabs.com/scripts/farsi.html): Experimental Persian-script correction (yeh/kaf variants, Persian-specific letters).
+- [Blog: why we built gurmukhifix](https://gurmukhifix.dosanjhlabs.com/blog/): The field story of digitising north-west Indian manuscripts and the evidence-gated correction approach it produced.
+- [Licence (MIT)](https://gurmukhifix.dosanjhlabs.com/license.html): Full MIT licence text and what it permits.
+
+## Install & source
+
+- [PyPI package](https://pypi.org/project/gurmukhifix/): pip install gurmukhifix — the authoritative package (the browser demo is a lightweight preview).
+- [Source code](https://github.com/jsdosanj/gurmukhifix): GitHub repository, issues and contribution guide.
+
+## Optional
+
+- [AI & content-usage policy](https://gurmukhifix.dosanjhlabs.com/ai-policy.html): What AI systems may and may not do with gurmukhifix's website content, and how to license it.
+- [Sitemap](https://gurmukhifix.dosanjhlabs.com/sitemap.xml): Full list of indexable pages.
