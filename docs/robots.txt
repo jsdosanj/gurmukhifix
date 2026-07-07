@@ -1,3 +1,104 @@
+# gurmukhifix — robots.txt
+# Full policy: https://gurmukhifix.dosanjhlabs.com/ai-policy.html
+#
+# Policy in one paragraph:
+#   1. Everyone — including Google, Bing, DuckDuckGo and every general search
+#      engine — may crawl and index the whole site. We WANT search + AI-answer
+#      referral traffic, so there is NO site-wide Disallow.
+#   2. AI *answer / search* agents that fetch a page to answer a user and CITE
+#      the source back to us are explicitly welcomed (ALLOW group below).
+#   3. AI *training / dataset* crawlers are asked not to collect this site:
+#      the website's written content is reserved against AI/ML model training
+#      and dataset creation (BLOCK group below). This reservation is also
+#      declared in /.well-known/tdmrep.json, /ai.txt, /llms.txt, and the
+#      response headers "X-Robots-Tag: noai, noimageai" and
+#      "Content-Usage: train-ai=n, search=y".
+#      Note: the gurmukhifix Python package itself is separately MIT-licensed
+#      and free to use, copy, modify, redistribute and train on — this
+#      reservation covers only this website's original written content.
+#   Content licensing: https://gurmukhifix.dosanjhlabs.com/ai-policy.html
+
+# --- Default: every crawler may read everything (no site-wide Disallow). ---
+# General search crawlers (Googlebot, Bingbot, DuckDuckBot, etc.) rely on this.
 User-agent: *
 Allow: /
+
+# =====================================================================
+# ALLOW — AI answer/search agents. These fetch pages to answer a user's
+# question and link/cite the source, which drives traffic to gurmukhifix.
+# They are explicitly permitted (belt-and-suspenders; already allowed by *).
+# =====================================================================
+# OpenAI — search surfacing + user-triggered fetch
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+# Anthropic — search + user-triggered fetch
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+# Perplexity — search index (not used for foundation-model training) + user fetch
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+# Apple — Siri / Spotlight / Safari suggestions
+User-agent: Applebot
+# Amazon — search + Alexa fetch (the newer split-out bots; NOT training-capable Amazonbot)
+User-agent: Amzn-SearchBot
+User-agent: Amzn-User
+# Meta — AI search index + user fetch (NOT the training Meta-ExternalAgent)
+User-agent: meta-webindexer
+User-agent: meta-externalfetcher
+# Mistral — search index + user fetch (neither is used for training)
+User-agent: MistralAI-Index
+User-agent: MistralAI-User
+# DuckDuckGo — AI-assist answers that cite sources (not used for training)
+User-agent: DuckAssistBot
+Allow: /
+
+# =====================================================================
+# BLOCK — AI training / dataset-collection crawlers. Content here is
+# reserved against model training, fine-tuning, and dataset creation.
+# Note: Google-Extended and Applebot-Extended are training opt-out control
+# tokens, NOT crawlers — disallowing them opts out of Gemini / Apple
+# Intelligence training WITHOUT affecting Google or Apple search.
+# =====================================================================
+# OpenAI foundation-model training
+User-agent: GPTBot
+# Anthropic training (current + legacy tokens)
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: Claude-Web
+# Google Gemini / Vertex AI training (does NOT affect Google Search)
+User-agent: Google-Extended
+# Apple Intelligence training (does NOT affect Applebot search)
+User-agent: Applebot-Extended
+# Meta AI training
+User-agent: Meta-ExternalAgent
+User-agent: FacebookBot
+# Amazon — leans training ("may be used to train Amazon AI models")
+User-agent: Amazonbot
+# Common Crawl — open corpus widely reused to train LLMs
+User-agent: CCBot
+# ByteDance
+User-agent: Bytespider
+# Cohere
+User-agent: cohere-ai
+User-agent: cohere-training-data-crawler
+# Diffbot
+User-agent: Diffbot
+# Webz.io / Omgili — dataset crawlers for AI training
+User-agent: Omgilibot
+User-agent: Omgili
+User-agent: webzio-extended
+# Huawei — PetalBot search data may feed PanGu; PanguBot trains PanGu
+User-agent: PetalBot
+User-agent: PanguBot
+# You.com — dual-use answer engine that also trains models
+User-agent: YouBot
+# Image-dataset crawler (ImageSift / Hive)
+User-agent: ImagesiftBot
+# Misc dataset / ML-insight crawlers
+User-agent: VelenPublicWebCrawler
+User-agent: Timpibot
+# Generic scraping framework
+User-agent: Scrapy
+Disallow: /
+
 Sitemap: https://gurmukhifix.dosanjhlabs.com/sitemap.xml

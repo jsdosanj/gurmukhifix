@@ -1,0 +1,12 @@
+# gurmukhifix — Cloudflare Pages headers.
+# AI-usage signals (full explanation: /ai-policy.html). Search indexing stays
+# fully ON (no noindex/nofollow anywhere); only AI/ML TRAINING is opted out.
+#   X-Robots-Tag: noai, noimageai        → publisher AI-training opt-out.
+#   Content-Usage: train-ai=n, search=y  → IETF AIPREF (draft-ietf-aipref-vocab).
+#   TDM-Reservation / TDM-Policy          → W3C TDM Reservation Protocol signal
+#     (full rule set in /.well-known/tdmrep.json).
+/*
+  X-Robots-Tag: noai, noimageai
+  Content-Usage: train-ai=n, search=y
+  TDM-Reservation: 1
+  TDM-Policy: https://gurmukhifix.dosanjhlabs.com/ai-policy.html

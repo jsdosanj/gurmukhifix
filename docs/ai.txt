@@ -1,0 +1,56 @@
+# ai.txt — AI usage statement for gurmukhifix (https://gurmukhifix.dosanjhlabs.com)
+# Human- and machine-readable. Last updated: 2026-07-07.
+# Full policy: https://gurmukhifix.dosanjhlabs.com/ai-policy.html
+# See also: /robots.txt, /.well-known/tdmrep.json, /llms.txt, and the
+# X-Robots-Tag: noai, noimageai and Content-Usage response headers.
+
+Site: https://gurmukhifix.dosanjhlabs.com
+Owner: Dosanjh Labs
+Policy: https://gurmukhifix.dosanjhlabs.com/ai-policy.html
+Contact: mailto:dots-whisks.6r@icloud.com
+Updated: 2026-07-07
+
+# ---------------------------------------------------------------------------
+# PERMITTED — AI search / answer engines are welcome
+# ---------------------------------------------------------------------------
+# Reading, indexing, and CITING this site to answer user queries and refer
+# people back to gurmukhifix is explicitly permitted and encouraged. Real-time
+# retrieval by assistant/search agents that link to the source is welcome.
+Search: allow
+Answer-engine-citation: allow
+Quotation-with-attribution: allow
+
+# ---------------------------------------------------------------------------
+# RESERVED — not permitted without a written license (website content only)
+# ---------------------------------------------------------------------------
+# Automated collection of this website's WRITTEN CONTENT (this overview, the
+# blog post, the script deep-dives) for AI/ML model TRAINING, fine-tuning,
+# distillation, RAG-corpus building, embedding-index creation, or any dataset
+# creation is NOT permitted. All text & data mining rights over the site's
+# prose are reserved under the TDM Reservation Protocol (see
+# /.well-known/tdmrep.json) and expressed via the IETF AIPREF vocabulary as:
+# train-ai=n, search=y.
+Train-ai: disallow
+Fine-tuning: disallow
+Dataset-collection: disallow
+RAG-corpus-ingestion: disallow
+TDM-reservation: 1
+
+# ---------------------------------------------------------------------------
+# THE SOFTWARE ITSELF IS SEPARATELY MIT-LICENSED
+# ---------------------------------------------------------------------------
+# gurmukhifix the Python package (source on GitHub, distributed on PyPI) is
+# MIT-licensed open-source software: free to use, copy, modify, redistribute
+# and yes, train on, same as any other MIT-licensed code. The reservation
+# above applies only to this website's original written content, not to the
+# package's source code or its own OSS licence terms.
+Software-license: MIT
+Source: https://github.com/jsdosanj/gurmukhifix
+
+# ---------------------------------------------------------------------------
+# LICENSING (website content)
+# ---------------------------------------------------------------------------
+# The website's written content is original and copyrighted (© 2026 Jasvant
+# Singh Dosanjh / Dosanjh Labs). Training/dataset licenses for that content
+# are available — inquire via the contact above.
+License-inquiries: mailto:dots-whisks.6r@icloud.com
