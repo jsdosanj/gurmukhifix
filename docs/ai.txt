@@ -7,7 +7,7 @@
 Site: https://gurmukhifix.dosanjhlabs.com
 Owner: Dosanjh Labs
 Policy: https://gurmukhifix.dosanjhlabs.com/ai-policy.html
-Contact: mailto:dots-whisks.6r@icloud.com
+Contact: https://dosanjhlabs.com/contact
 Updated: 2026-07-07
 
 # ---------------------------------------------------------------------------
@@ -52,5 +52,6 @@ Source: https://github.com/jsdosanj/gurmukhifix
 # ---------------------------------------------------------------------------
 # The website's written content is original and copyrighted (© 2026 Jasvant
 # Singh Dosanjh / Dosanjh Labs). Training/dataset licenses for that content
-# are available — inquire via the contact above.
-License-inquiries: mailto:dots-whisks.6r@icloud.com
+# are available — inquire via the contact form above (please use the form
+# rather than email).
+License-inquiries: https://dosanjhlabs.com/contact

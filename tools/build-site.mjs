@@ -17,7 +17,9 @@ const BASE_URL = "https://gurmukhifix.dosanjhlabs.com";
 const REPO = "https://github.com/jsdosanj/gurmukhifix";
 const PYPI = "https://pypi.org/project/gurmukhifix/";
 const DOSANJH_LABS_URL = "https://dosanjhlabs.com/";
-const CONTACT_EMAIL = "dots-whisks.6r@icloud.com";
+// gurmukhifix has no dedicated contact page of its own; point to the parent
+// Dosanjh Labs site's contact form instead of a plaintext owner email.
+const CONTACT_URL = "https://dosanjhlabs.com/contact";
 const LAST_MOD = "2026-07-07";
 // Bump when assets (css/js/images) change, to bust browser caches on the next load.
 const ASSET_VER = "3";
@@ -740,8 +742,8 @@ function aiPolicyPage() {
   <section class="doc-section">
     <div class="doc-wrap">
       <h2>Licensing</h2>
-      <p class="lead">Want to use this website's content in a training set, an evaluation benchmark, a retrieval corpus, or another product? That's often possible under licence. Reach out and tell us what you have in mind.</p>
-      <p><a class="btn btn-primary" href="mailto:${CONTACT_EMAIL}">Contact us about licensing →</a></p>
+      <p class="lead">Want to use this website's content in a training set, an evaluation benchmark, a retrieval corpus, or another product? That's often possible under licence. To license this content or get in touch, use the contact form at <a href="${CONTACT_URL}" target="_blank" rel="noopener">${CONTACT_URL}</a> (please use the form rather than email).</p>
+      <p><a class="btn btn-primary" href="${CONTACT_URL}" target="_blank" rel="noopener">Contact us about licensing →</a></p>
       <p class="post-cta">Honest disclaimer: gurmukhifix's <em>software</em> is MIT-licensed — free for anyone to use, copy, modify, redistribute or build on, including in AI systems. This page's reservation applies only to the website's written content (this policy, the homepage copy, the blog post and the script deep-dives), which is © 2026 Jasvant Singh Dosanjh / Dosanjh Labs. Nothing here is legal advice.</p>
     </div>
   </section>
@@ -902,7 +904,7 @@ const aiTxt = `# ai.txt — AI usage statement for gurmukhifix (${BASE_URL})
 Site: ${BASE_URL}
 Owner: Dosanjh Labs
 Policy: ${BASE_URL}/ai-policy.html
-Contact: mailto:${CONTACT_EMAIL}
+Contact: ${CONTACT_URL}
 Updated: ${LAST_MOD}
 
 # ---------------------------------------------------------------------------
@@ -947,8 +949,9 @@ Source: ${REPO}
 # ---------------------------------------------------------------------------
 # The website's written content is original and copyrighted (© 2026 Jasvant
 # Singh Dosanjh / Dosanjh Labs). Training/dataset licenses for that content
-# are available — inquire via the contact above.
-License-inquiries: mailto:${CONTACT_EMAIL}
+# are available — inquire via the contact form above (please use the form
+# rather than email).
+License-inquiries: ${CONTACT_URL}
 `;
 
 const llmsTxt = `# gurmukhifix
